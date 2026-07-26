@@ -96,11 +96,44 @@ Le variabili di configurazione vengono caricate attraverso variabili d'ambiente 
 Ciascun servizio ha una serie di configurazioni obbligatorie e una serie di configurazioni opzionali.
 Viene definita una classe con una serie di metodi per fare il parsing del valore delle variabili d'ambiente;
 Il fallimento di una di queste funzioni, dato da un valore non coerente con il tipo richiesto o la mancata presenza di una variabile obbligatoria risulta nell'immediata terminazione del programma.
+### Frontend
+Per lo sviluppo del frontend è stato coinvolto un esperto di user experience in modo tale da mantenere un'alto standard di usabilità.
+Inizialmente è stato proposto un design semplice che riproponeva la pagina precedente, semplicemente modificando lo stile e rendendolo più moderno.
+[mockup iniziale]
+Dopo l'intervento dell'esperto il mockup si è evoluto dando la possibilità alla pagina di trasmettere più informazioni, nonostante il mantenimento delle stesse API.
+[mockup finale]
 ## Sviluppo
+Durante questa fase sono stati analizzati i linguaggii da utilizzare per la creazione del nuovo servizio.
+Per rispettare i requisiti del problema (servizio efficiente e a basso consumo di risorse), il linguaggio selto deve essere un linguaggio compilato e non interpretato, linguaggi come python e php sono stati scartati a priori.
+Il secondo requisito è la possibilità di gestire codice concorrente.
+Dati questi due principali requisiti è stato scelto `go` come linguaggio di scrittura del servizio lato backend, poiché è un linguaggio compilato e soprattutto supporta nativamente e facilmente la gestione di routine concorrenti. 
 ### Implementation Highlight
+#### Esecuzione del Ping
+L'esecuzione del ping sul server è l'operazione più importante del sistema.
+La versione legacy del software eseguiva semplicemente il comando `ping -c MAX_PING <network>` su una shell bash creata sul momento ed eseguiva poi il parsing del risultato. Il parser si aspetta un formato molto specifico del risultato, il ché rendeva il sistema molto fragile ad errori, un minimo cambiamento al formato standard della risposta del comando ping eseguito su una shell linux e la risposta veniva considerata come un fallimento.
 
+Il nuovo sistema è stato creato con l'affidabilità alla base.
+Al posto di eseguire una shell bash, è stata utilizzata una libreria per fare chiamate `ICMP`; A questa libreria è stato creato un wrapper che permetta l'utilizzo facilitato di una libreria altrimenti altamente complessa.
 ## Deployment
 
+### Frontend
+Per permettere al frontend di mostrare i dati aggregati, è prima necessario uno passo intermedio.
+È necessario aggiungere una nuova API ai microservizi attuali, questa API avrà il compito di autenticare l'utente che richiede il servizio di latenza, interpellare il servizio di upstream e ricevere la risposta e successivamente recuperare le informazioni necessarie per il display delle informazioni all'interno della mappa come:
+- Le geolocalizzazione (latitudine, longitudine, nome città e nazione) di ciascun server interrogato.
+- La geolocalizzazione dell'indirizzo (latitudine e logitudine a livello di nazione) ip dato dal client al momento della richiesta.
+
+Dopo una analisi della semantica delle informazioni fornite da questo servizio, siamo giunti alla conclusione che nessun microservizio attualmente presente sarebbe adatto al contenimento di questa nuova API, è stata quindi necessaria la creazione di un nuovo microservizio all'interno dell'applicativo: `infrastructure`.
+
+Il nuovo microservizio servirà per tutte quelle nuove feature che implementano un qualsiasi tipo di tool di supporto all'utilizzo dell'applicazione.
+Per la creazione del nuovo microservizio è stato necessario configurare diversi aspetti:
+- Ambiente di testing delle api e di qualsiasi business logic interna al nuovo microservizio.
+- Nuovo database direttamente collegato al microservizio
+- Due dockerfile, uno per l'ambiente di development e testing e uno per l'ambiente di esercizio (production), necessario per poi dispiegare il nuovo microservizio all'interno di un cluster kuberneetes.
+### Backend
+Per il deploy dei servizi di downstream e upstream all'interno della infrastruttura esistente sono stati creati dei dockerfile ad hoc contenenti i file binari compilati dei due servizi.
+Per evitare di caricare sui server codice binario inutilizzato (come il compilatore del linguaggio), è stato creato un dockerfile multistage
+- Un primo stage che scarica le librerie necessarie e compila i codici sorgenti in un unico file binaro eseguibile.
+- Un secondo stage che utilizzando una immagine leggera (`FROM debian:bookworm-slim`) elimina qualsiasi file non necessario e successivamente copia il file binario creato al primo stage, minimizzando le risorse necessarie per l'esecuzione del servizio.
 ## Analisi dei Risultati
 ### Testing automatico
 ### Sperimentazioni
