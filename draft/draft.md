@@ -106,17 +106,24 @@ Dopo l'intervento dell'esperto il mockup si è evoluto dando la possibilità all
 Durante questa fase sono stati analizzati i linguaggii da utilizzare per la creazione del nuovo servizio.
 Per rispettare i requisiti del problema (servizio efficiente e a basso consumo di risorse), il linguaggio selto deve essere un linguaggio compilato e non interpretato, linguaggi come python e php sono stati scartati a priori.
 Il secondo requisito è la possibilità di gestire codice concorrente.
-Dati questi due principali requisiti è stato scelto `go` come linguaggio di scrittura del servizio lato backend, poiché è un linguaggio compilato e soprattutto supporta nativamente e facilmente la gestione di routine concorrenti. 
+Dati questi due principali requisiti è stato scelto `go` come linguaggio di scrittura del servizio lato backend, poiché è un linguaggio compilato e soprattutto supporta nativamente e facilmente la gestione di routine concorrenti, concetto fondamentale per lo sviluppo degli strumenti richiesti.
 ### Implementation Highlight
 #### Esecuzione del Ping
 L'esecuzione del ping sul server è l'operazione più importante del sistema.
 La versione legacy del software eseguiva semplicemente il comando `ping -c MAX_PING <network>` su una shell bash creata sul momento ed eseguiva poi il parsing del risultato. Il parser si aspetta un formato molto specifico del risultato, il ché rendeva il sistema molto fragile ad errori, un minimo cambiamento al formato standard della risposta del comando ping eseguito su una shell linux e la risposta veniva considerata come un fallimento.
 
 Il nuovo sistema è stato creato con l'affidabilità alla base.
-Al posto di eseguire una shell bash, è stata utilizzata una libreria per fare chiamate `ICMP`; A questa libreria è stato creato un wrapper che permetta l'utilizzo facilitato di una libreria altrimenti altamente complessa.
-## Deployment
+Al posto di eseguire una shell bash, è stata utilizzata la libreria di `golang.org/x/net/icmp` per eseguire chiamate `ICMP` attraverso la rete; A questa libreria è stato creato un wrapper che permetta l'utilizzo facilitato di una libreria altrimenti altamente complessa.
 
-### Frontend
+Il wrapper permette di eseguire una serie di messaggi `ICMP:Echo` con id univoci in modo da filtrare pacchetti `ICMP` non voluti, attraverso il pattern strategy definito in precedenza, permette di inviare in maniera trasparente la richiesta sia su una rete IPv4 che su una rete IPv6, in base all'indirizzo fornito dall'utente. Infine permette opzionalmente la possibilità di impostare il `TTL` ad ogni pacchetto.
+``` go
+// insert example some code
+```
+Quest'ultima feature permette una potenziale futura espansione del servizio attuale con l'aggiunta del traceroute.
+
+Questo wrapper risolve il problema della fragilità del risultato, poiché il parsing del risultato non viene più fatto in base all'output di un comando di una bash. Il risultato finale viene calcolato sulla base dei risultati di ogni pacchetto che vengono salvati in locale.
+## Deployment
+### Infrastructure
 Per permettere al frontend di mostrare i dati aggregati, è prima necessario uno passo intermedio.
 È necessario aggiungere una nuova API ai microservizi attuali, questa API avrà il compito di autenticare l'utente che richiede il servizio di latenza, interpellare il servizio di upstream e ricevere la risposta e successivamente recuperare le informazioni necessarie per il display delle informazioni all'interno della mappa come:
 - Le geolocalizzazione (latitudine, longitudine, nome città e nazione) di ciascun server interrogato.
