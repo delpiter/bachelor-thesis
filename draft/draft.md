@@ -97,16 +97,19 @@ Ciascun servizio ha una serie di configurazioni obbligatorie e una serie di conf
 Viene definita una classe con una serie di metodi per fare il parsing del valore delle variabili d'ambiente;
 Il fallimento di una di queste funzioni, dato da un valore non coerente con il tipo richiesto o la mancata presenza di una variabile obbligatoria risulta nell'immediata terminazione del programma.
 ### Frontend
-Per lo sviluppo del frontend è stato coinvolto un esperto di user experience in modo tale da mantenere un'alto standard di usabilità.
+Per lo sviluppo del frontend è stato coinvolto un esperto di user experience in modo tale da mantenere un'alto standard di usabilità e estetica.
+La progettazione è partita dal design della vechia pagina, la nuova doveva riproporre le stesse feature in maniera più chiara e pulita.
+[wireframe del modello]
 Inizialmente è stato proposto un design semplice che riproponeva la pagina precedente, semplicemente modificando lo stile e rendendolo più moderno.
 [mockup iniziale]
 Dopo l'intervento dell'esperto il mockup si è evoluto dando la possibilità alla pagina di trasmettere più informazioni, nonostante il mantenimento delle stesse API.
 [mockup finale]
+Questo design finale mostra i dati in maniera chiara con uno stile riadattato al resto dell'applicazione, consentendo inoltre opzioni per nuove aggiunte future.
 ## Sviluppo
-Durante questa fase sono stati analizzati i linguaggii da utilizzare per la creazione del nuovo servizio.
+Durante questa fase sono stati analizzati i linguaggi da utilizzare per la ricostruzione del servizio.
 Per rispettare i requisiti del problema (servizio efficiente e a basso consumo di risorse), il linguaggio selto deve essere un linguaggio compilato e non interpretato, linguaggi come python e php sono stati scartati a priori.
-Il secondo requisito è la possibilità di gestire codice concorrente.
-Dati questi due principali requisiti è stato scelto `go` come linguaggio di scrittura del servizio lato backend, poiché è un linguaggio compilato e soprattutto supporta nativamente e facilmente la gestione di routine concorrenti, concetto fondamentale per lo sviluppo degli strumenti richiesti.
+Il secondo requisito è la possibilità di gestire codice in maniera concorrente.
+Dati questi due principali requisiti è stato scelto `go` come linguaggio di scrittura del servizio lato backend, poiché è un linguaggio compilato e soprattutto supporta in maniera nativa e facilitata la gestione di routine concorrenti, concetto fondamentale per lo sviluppo degli strumenti richiesti.
 ### Implementation Highlight
 #### Esecuzione del Ping
 L'esecuzione del ping sul server è l'operazione più importante del sistema.
@@ -122,6 +125,8 @@ Il wrapper permette di eseguire una serie di messaggi `ICMP:Echo` con id univoci
 Quest'ultima feature permette una potenziale futura espansione del servizio attuale con l'aggiunta del traceroute.
 
 Questo wrapper risolve il problema della fragilità del risultato, poiché il parsing del risultato non viene più fatto in base all'output di un comando di una bash. Il risultato finale viene calcolato sulla base dei risultati di ogni pacchetto che vengono salvati in locale.
+
+#### Bounded Concurrency
 ## Deployment
 ### Infrastructure
 Per permettere al frontend di mostrare i dati aggregati, è prima necessario uno passo intermedio.
