@@ -1,32 +1,70 @@
 # Servizio di diagnotica della latenza in una rete anycast
-
 ## Introduzione
-
+Il presente documento descrive le attività svolte da Foschi Gioele durante il periodo di tirocinio aziendale, sotto la supervisione del Prof. Mirko Viroli, i Tutor Aziendali
+Francesco Collini e Stefano Babini. 
+Il progetto è stato incentrato sulla modernizzazione architetturale e sul re-engineering ad alte prestazioni dei servizi di misurazione della latenza di rete.
+Il sistema preesistente basato su architettura PHP/Apache e script di fan-out Python soffriva di limitazioni prestazionali, elevato overhead di CPU/memoria ed eccessiva rigidità nella gestione dell'I/O concorrente. 
 ## Background
-> Struttura attuale del servizio
+> Definizioni di rete anycast e importanza del tool.
 
-- Come funziona il servizio
-- Modalità di interazione tra i vari servizi.
-- Grafici cool (flusso dell'informazione e schema delle macchine).
+[...]
+
+> Architettura attuale del servizio
+
+Il servizio latency si compone di due servizi separati.
+
+### Upstream Orchestrator
+L'upstream orchestrator è composto da due script.
+Uno controller php che gestisce le chiamate da parte dei client e uno script python esterno che gestisce il fanout (Fan-out generally refers to the act of spreading out from a single point or source to multiple destinations) verso gli endpoint downstream.
+
+### Downstream 
+Il servizio di downstream è composto da un controller php che esegue comandi shell di sistema `ping/ping6` gestendo l'output come stringa rigida.
+
+```sh
+ping -c 3 ipv4Address 2>&1
+# or 
+ping6 -c 3 ipv6Address 2>&1
+```
+
+Il parsing dell'output si basa su indici di riga fissi (8 righe)
+```
+PING 8.8.8.8 (8.8.8.8) 56(84) bytes of data.
+64 bytes from 8.8.8.8: icmp_seq=1 ttl=111 time=71.1 ms
+64 bytes from 8.8.8.8: icmp_seq=2 ttl=111 time=53.9 ms
+64 bytes from 8.8.8.8: icmp_seq=3 ttl=111 time=42.8 ms
+
+--- 8.8.8.8 ping statistics ---
+3 packets transmitted, 3 received, 0% packet loss, time 2000ms
+rtt min/avg/max/mdev = 42.838/55.945/71.057/11.607 ms
+```
+Il parser si aspetta come input una stringa con questo formato specifico andando a leggere precisamente la settima riga ricavando il tempo medio di risposta attraverso semplici operazioni con le stringhe.
+Questo metodo è altamente vulnerabile alle variazioni del sistema operativo target.
+
+[Grafici del flusso dell'informazione].
 ## Analisi
 In questo capitolo vengono evidenziati i requisiti del progetto, analizzando i limiti imposti dalla quantità di risorse a disposizione da ciascun server all'interno della rete.
 ### Obbiettivi
-L'obbiettivo di questo progetto è quello di riscrivere un servizio di monitoraggio della latenza, partendo da un codice monolitico scritto in php e javascript.
-La riscrittura coinvolge 4 sezioni distinte:
+L'obbiettivo di questo progetto è quello di riscrivere un servizio di monitoraggio della latenza, partendo da un codice monolitico scritto in php, python e javascript.
+La riscrittura coinvolge 3 sezioni distinte:
 - Servizio downstream
     - Servizio localizzato all'interno di ciascuno dei server remoti nella rete utilizzato per richiedere il tempo di latenza tra il server e una macchina specifica in una qualsiasi location nel mondo.  
 - Servizio upstream
     - Servizio localizzato all'interno del server principale, questo servizio ha il compito di recuperare la lista dei server attivi da interrogare per la latenza, aggregare e riordinare i risultati ottenuti.
-- Frontend
-    - Il frontend servirà per visualizzare i risultati ottenuti in maniera semplice e interpretabile anche da un utilizzatore non esperto del software.
+
+Per questi due progetti gli obbiettivi sono i seguenti:
+- Eliminazione dei colli di bottiglia: Sostituzione dei processi di sistema shell-based con esecuzione controllata e concurrent fan-out.
+- Scalabilità orizzontale: Standardizzazione dei container Docker light-weight e orchestrazione con Docker-Compose per ambienti di test e produzione.
+- Garanzia di compatibilità (Golden Testing): Mantenimento rigoroso dei contratti API REST sia per i client dashboard sia per i servizi downstream/upstream legati all'infrastruttura MySQL e PostgreSQL.
+
+- Interfaccia grafica
+    - L'interfaccia grafica servirà per visualizzare i risultati ottenuti in maniera semplice e interpretabile anche da un utilizzatore non esperto del software.
 ### Limitazioni
 Per quanto riguarda i servizi di downstream e upstream le limitazioni sono le seguenti:
-- Il software deve essere il più leggero e efficiente possibile, in quanto dovrà essere dispiegato su server che devono gestire milioni di richieste giornaliere.
-- Il software non deve assolutamente rallentare il funzionamento delle macchine fisiche.
-- Il nuovo software deve essere retrocompatibile con la versione precedente del software, in modo tale che possa essere utilizzato dalla dashboard legacy senza necessità di ulteriori modifiche al codice attuale.
+- Il software deve essere il più leggero e efficiente possibile, in quanto dovrà essere dispiegato su server che devono gestire milioni di richieste giornaliere. Il software non deve assolutamente rallentare il funzionamento delle macchine fisiche.
+- Il software deve essere retrocompatibile con la versione precedente, in modo tale che possa essere utilizzato dalla dashboard legacy senza necessità di ulteriori modifiche al codice attuale.
 ### Analisi dei Requisiti
 I due servizi principali sono stati progettati seguendo il pattern di programmazione MVC.
-- Devono esporre delle api ben definite (View), analizzare le richieste ricevute (Controller) e eseguire le operazioni (Controller).
+- Devono esporre delle api ben definite (View), analizzare le richieste ricevute (Controller) e eseguire le operazioni sui dati (Model).
 #### Upstream service
 Il servizio di upstream deve interrogare tutti i server e validare i valori di output.
 Deve esporre due interfaccie API:
@@ -41,17 +79,23 @@ La risposta ottenuta dalle due interfacce deve essere omogenea.
     ...
 ]
 ```
-La richiesta si divide in due sezioni distinte
-> Recupero della lista dei client
-In base alla richiesta ricevuta viene selezionata una lista diversa di server da interrogare.
-- `api/latency/` seleziona gli host standard da interrogare.
-- `api/latency/cloud` selezione una lista di host sul cloud.
+La struttura del messaggio di risposta è stata riportata dal tipo di ritorno della vecchia API.
 
-Il fallimento della richiesta o il superamento di una deadline comporta il fallimento della richiesta di latenza.
+La richiesta si divide in due sezioni distinte
+
+> Recupero della lista dei client
+
+In base alla richiesta ricevuta viene selezionata una lista diversa di server da interrogare.
+- `api/latency/` seleziona gli host fisici attualmente attivi.
+- `api/latency/cloud` seleziona una lista di host dispiegati sul cloud.
+
+[TODO] check if correct
+
+Il fallimento della richiesta o il superamento di una deadline pre-impostata comporta il fallimento della richiesta di latenza.
 
 > Aggregazione dei valori
 In questa sezione viene validato ciascun indirizzo ip ottenuto in precedenza; Per ogni host valido viene interrogato il server server downstream corrispondente per il valore della latenza.
-Ogni richiesta deve essere trattata in maniera indipendente dalle altre: il fallimento di una richiesta non deve comportare l'intera aggregazione.
+Ogni richiesta deve essere trattata in maniera indipendente dalle altre: il fallimento di una richiesta non deve compromettere l'intera aggregazione.
 Successivamente vengono normalizzati i risultati ottenuti per aderire al modello di risposta analizzato in precedenza.
 - Se una richiesta fallisce, impiega troppo tempo o ritorna un codice http diversa da `2xx`, comporta l'assegnazione del valore `-1` alla richiesta a quel server.
 
@@ -60,10 +104,10 @@ Infine la lista di valori deve essere ordinata in ordine ascendente secondo la l
 Il servizio di downstream comprende 3 sezioni:
 - Esposizione dell'interfaccia API per la richiesta della latenza.
 `GET /api/latency`
-Appena ricevuta la richiesta, essa deve essere validata.
 La richiesta dovrà ritornare un semplice valore che rappresenta il tempo di risposta medio del server interrogato.
+
 Una richiesta valida deve contenere un parametro `network` nella richiesta `http` e come valore deve essere presente un indirizzo ip valido sia ipv4 che ipv6.
-- Se la richiesta non soddisfa i requisiti deve fallire immediatamente per evitare di sprecare risorse importanti del server.
+- Appena ricevuta la richiesta, essa deve essere validata, una richiesta con indirizzo assente o non valido deve essere rifiutata immediatamente e ritornare il codie `403`.
 
 Una volta validato l'indirizzo viene eseguito il ping della macchina specificata, questo passaggio deve essere indipendente dal tipo di versione dell'indirizzo che è stato ricevuto.
 - Questa operazione ha delle deadline strette per evitare di consumare troppe risorse, se una richiesta ping eccede questa deadline il pacchetto viene considerato perso.
@@ -76,7 +120,8 @@ Infine deve essere fatta la validazione del risultato ottenuto dall'esecuzione d
 In questo capitolo verranno speigate in maniera dettagliata le decisioni architetturali prese per lo sviluppo dei due serivzi principali.
 ### Downstream Service
 Il servizio di downstream deve essere in grado di gestire in maniera trasparente l'utilizzo di versioni del protocollo IP differenti (`ipv4` e `ipv6`).
-Le operazioni specifiche ad una versione del protocollo `ip` verranno delegate ad una classe che, attraverso l'utilizzo del pattern *strategy*, sarà in grado di gestire l'operazione in base alla verisone del protocollo ip utilizzata.
+Le operazioni specifiche ad una versione del protocollo `ip` verranno delegate ad una classe che, attraverso l'utilizzo del pattern *strategy*, sarà in grado di gestire le varie operazioni necessarie all'invio del messaggio `ICMP` in base alla verisone del protocollo ip utilizzata.
+
 ### Upstream Service
 Il numero di server da interrogare potrebbe aumentare notevolmente nel tempo; Eseguire le chiamate in sequenza non è possibile, in quanto con un numero elevato di interrogazioni da fare l'esecuzione verrebbe sicuramente interrotta dal timeout imposto.
 È necessario quindi eseguire le chiamate in parallelo.
@@ -97,7 +142,7 @@ Ciascun servizio ha una serie di configurazioni obbligatorie e una serie di conf
 Viene definita una classe con una serie di metodi per fare il parsing del valore delle variabili d'ambiente;
 Il fallimento di una di queste funzioni, dato da un valore non coerente con il tipo richiesto o la mancata presenza di una variabile obbligatoria risulta nell'immediata terminazione del programma.
 ### Frontend
-Per lo sviluppo del frontend è stato coinvolto un esperto di user experience in modo tale da mantenere un'alto standard di usabilità e estetica.
+Per lo sviluppo del frontend è stato coinvolto un esperto di user experience in modo tale da mantenere un'alto standard di usabilità e coerenza di stile con il resto della applicazione.
 La progettazione è partita dal design della vechia pagina, la nuova doveva riproporre le stesse feature in maniera più chiara e pulita.
 [wireframe del modello]
 Inizialmente è stato proposto un design semplice che riproponeva la pagina precedente, semplicemente modificando lo stile e rendendolo più moderno.
@@ -120,7 +165,7 @@ Al posto di eseguire una shell bash, è stata utilizzata la libreria di `golang.
 
 Il wrapper permette di eseguire una serie di messaggi `ICMP:Echo` con id univoci in modo da filtrare pacchetti `ICMP` non voluti, attraverso il pattern strategy definito in precedenza, permette di inviare in maniera trasparente la richiesta sia su una rete IPv4 che su una rete IPv6, in base all'indirizzo fornito dall'utente. Infine permette opzionalmente la possibilità di impostare il `TTL` ad ogni pacchetto.
 ``` go
-// insert example some code
+// insert example code
 ```
 Quest'ultima feature permette una potenziale futura espansione del servizio attuale con l'aggiunta del traceroute.
 
