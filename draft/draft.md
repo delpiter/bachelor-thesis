@@ -1,13 +1,21 @@
 # Servizio di diagnotica della latenza in una rete anycast
 ## Introduzione
-Il presente documento descrive le attività svolte da Foschi Gioele durante il periodo di tirocinio aziendale, sotto la supervisione del Prof. Mirko Viroli, i Tutor Aziendali
-Francesco Collini e Stefano Babini. 
-Il progetto è stato incentrato sulla modernizzazione architetturale e sul re-engineering ad alte prestazioni dei servizi di misurazione della latenza di rete.
-Il sistema preesistente basato su architettura PHP/Apache e script di fan-out Python soffriva di limitazioni prestazionali, elevato overhead di CPU/memoria ed eccessiva rigidità nella gestione dell'I/O concorrente. 
+Il presente documento descrive le attività svolte da Foschi Gioele durante il periodo di tirocinio aziendale presso FlashStart, sotto la supervisione del Prof. Mirko Viroli, i Tutor Aziendali Francesco Collini e Stefano Babini. 
+Il progetto è stato incentrato sulla modernizzazione architetturale e sul re-engineering ad alte prestazioni dei servizi di misurazione della latenza in una ***rete anycast*** (add definition).
+Il sistema preesistente basato su architettura PHP/Apache e script di ***fan-out*** (add definition) Python soffriva di limitazioni prestazionali, elevato overhead di CPU/memoria ed eccessiva rigidità nella gestione dell'I/O concorrente.
 ## Background
-> Definizioni di rete anycast e importanza del tool.
+// Maybe move company context up before the project definition.
 
-[...]
+> Contesto aziendale
+
+FlashStart è una azienda che da oltre 20 anni protegge gli utenti nel mondo digitale con soluzioni di sicurezza informatica attraverso il filtraggio dei contenuti basato su DNS e intelligenza artificiale.
+L'azienda fornisce filtraggio dei contenuti per utenti singoli o organizzazioni di ogni dimensione.
+FlashStart opera su una rete Anycast globale composta da più di 160 nodi distribuiti strategicamente in tutti i continenti, progettata per garantire elevata disponibilità, latenza minima e continuità operativa anche in caso di interruzioni o picchi di traffico.
+
+A partire dal 2026 FlashStart ha iniziato il più grande redesign dell'azienda, spostandosi da una applicazione legacy con architettura monolitica ad un applicativo moderno con una architettura basata su microservizi altamente scalabili.
+
+> Importanza del tool.
+Il tool è essenziale in quanto riesce a far capire ad un utente non esperto il concetto di rete anycast, mostrando in maniera chiara e coincisa che il server che sta rispondendo alle richieste è il server che risponded più velocemente.
 
 > Architettura attuale del servizio
 
@@ -94,6 +102,7 @@ In base alla richiesta ricevuta viene selezionata una lista diversa di server da
 Il fallimento della richiesta o il superamento di una deadline pre-impostata comporta il fallimento della richiesta di latenza.
 
 > Aggregazione dei valori
+
 In questa sezione viene validato ciascun indirizzo ip ottenuto in precedenza; Per ogni host valido viene interrogato il server server downstream corrispondente per il valore della latenza.
 Ogni richiesta deve essere trattata in maniera indipendente dalle altre: il fallimento di una richiesta non deve compromettere l'intera aggregazione.
 Successivamente vengono normalizzati i risultati ottenuti per aderire al modello di risposta analizzato in precedenza.
@@ -115,6 +124,10 @@ Una volta validato l'indirizzo viene eseguito il ping della macchina specificata
 
 Infine deve essere fatta la validazione del risultato ottenuto dall'esecuzione del ping.
 - Se la perdita di pacchetti blocca il calcolo del tempo di risposta medio, la richiesta deve tornare `-1`.
+
+#### Integrazione con l'app
+Per poter usufruire di questo servizio è necessario un entry point all'interno dell'applicativo.
+
 
 ## Progettazione
 In questo capitolo verranno speigate in maniera dettagliata le decisioni architetturali prese per lo sviluppo dei due serivzi principali.
