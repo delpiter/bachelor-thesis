@@ -159,9 +159,8 @@ Una volta validato l'indirizzo viene eseguito il ping della macchina specificata
 Infine deve essere fatta la validazione del risultato ottenuto dall'esecuzione del ping.
 - Se la perdita di pacchetti blocca il calcolo del tempo di risposta medio, la richiesta deve tornare `-1`.
 
-#### Integrazione con l'app
-Per permettere agli utenti di *FlashStart 2026* di usufruire di questo servizio è necessario un entry point all'interno dell'applicazione.
-Per mantenere una codebase coerente con il resto dell'applicativo sviluppato dagli altri developer, è stato scelto di progettare il nuovo entrypoint con il pattern `M.V.C.`.
+#### Integrazione con FlashStart 2026
+L'integrazione con l'applicativo dovrà essere coerente con la codebase già presente.
 
 ## Progettazione
 In questo capitolo verranno speigate in maniera dettagliata le decisioni architetturali prese per lo sviluppo dei due serivzi principali.
@@ -190,7 +189,9 @@ Viene definita una classe con una serie di metodi per fare il parsing del valore
 Il fallimento di una di queste funzioni, dato da un valore non coerente con il tipo richiesto o la mancata presenza di una variabile obbligatoria risulta nell'immediata terminazione del programma.
 ### Integrazione con FlashStart 2026
 Per integrare il servizio di latenza con FlashStart2026 è necessaria l'aggiunta di 
-Per mantenere lo standard di progettazione del resto di FlashStart2026, è stato 
+Si vuole permettere agli utilizzatori di *FlashStart 2026* di usufruire del servizio di latenza.
+È dunque necessario aggiungere un entry point all'interno dell'applicazione.
+Per mantenere una codebase coerente con il resto dell'applicativo sviluppato dagli altri developer in azienda, è stato scelto di progettare il nuovo entrypoint con il pattern `M.V.C.`.
 ## Sviluppo
 Durante questa fase sono stati analizzati i linguaggi da utilizzare per la ricostruzione del servizio.
 Per rispettare i requisiti del problema (servizio efficiente e a basso consumo di risorse), il linguaggio selto deve essere un linguaggio compilato e non interpretato, linguaggi come python e php sono stati scartati a priori.
@@ -213,7 +214,64 @@ Quest'ultima feature permette una potenziale futura espansione del servizio attu
 Questo wrapper risolve il problema della fragilità del risultato, poiché il parsing del risultato non viene più fatto in base all'output di un comando di una bash. Il risultato finale viene calcolato sulla base dei risultati di ogni pacchetto che vengono salvati in locale.
 
 #### Bounded Parallelism
-`https://go.dev/blog/pipelines`
+Il linguaggio `golang` mette a disposizione due costrutti nativi per la gestione di routine parallele: le goroutine, funzioni parallele asincrone e i canali (`chan`) strutture dati in grado di gestire automaticamente la concorrenza senza provocare race conditions.
+I canali possono anche essere visti come dei semafori nella teoria della programmazione concorrente.
+
+Per implementare il bounded parallelism pattern, si è partiti dall'implementazione di una funzione che calcola il *checksum MD5* di tutti i file in una directory specificata (`https://go.dev/blog/pipelines`), riadattandolo secondo le necessità del sistema in sviluppo.
+
+Il funzionamento dell'algoritmo si basa su 3 canali:
+- Un canale che eroga uno alla volta ciascun indirizzo dei server da interrogare.
+- Un canale che colleziona i risultati.
+- Un canale che segnala la conclusione.
+
+Una volta inizializzati i canali viene creato l'insieme di "thread worker" che eseguiranno le richieste di latenza ai vari server.
+A ciascun worker vengono condivisi i tre canali creati, quando riceve un nuovo indirizzo IP dal canale, esegue la chiamata, ritorna il valore di latenza e si rimette in ascolto per il prossimo indirizzo.
+
+``` go
+func serverListWalk(
+    done <-chan struct{},
+    serverIp []string
+) (<-chan string, <-chan error) {
+	paths := make(chan string)
+	errc := make(chan error, 1)
+	go func() {
+		defer close(paths)
+
+		for i := range serverIp {
+			select {
+			case paths <- serverIp[i]:
+			case <-done:
+				errc <- errors.New("Request cancelled")
+				return
+			}
+		}
+		errc <- nil
+	}()
+	return paths, errc
+}
+```
+
+``` go
+func worker(
+	conf config.AggregatorConfig,
+	done <-chan struct{},
+	servers <-chan string,
+	c chan<- result,
+	targetIp string,
+	fetchLatency func(conf config.AggregatorConfig, serverIp, targetIp string) (shared.Result, error),
+) {
+	for serverIp := range servers {
+
+		latencyResult, err := fetchLatency(conf, serverIp, targetIp)
+
+		select {
+		case c <- result{latencyResult.Address, latencyResult.Value, err}:
+		case <-done:
+			return
+		}
+	}
+}
+```
 #### Frontend
 Per lo sviluppo del frontend è stato coinvolto un esperto di user experience in modo tale da mantenere un'alto standard di usabilità e coerenza di stile con il resto dell'applicativo.
 La progettazione è partita dal design della vechia pagina, la nuova doveva riproporre le stesse feature in maniera più chiara e pulita.
