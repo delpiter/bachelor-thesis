@@ -160,13 +160,28 @@ Infine deve essere fatta la validazione del risultato ottenuto dall'esecuzione d
 - Se la perdita di pacchetti blocca il calcolo del tempo di risposta medio, la richiesta deve tornare `-1`.
 
 #### Integrazione con FlashStart 2026
-L'integrazione con l'applicativo dovrà essere coerente con la codebase già presente.
+Per permettere al frontend di mostrare i dati aggregati, è prima necessario uno passo intermedio.
+È necessario aggiungere una nuova API ai microservizi attuali, questa API avrà il compito di autenticare l'utente che richiede il servizio di latenza, interpellare il servizio di upstream e ricevere la risposta e successivamente recuperare le informazioni necessarie per il display delle informazioni all'interno della mappa come:
+- Le geolocalizzazione (latitudine, longitudine, nome città e nazione) di ciascun server interrogato.
+- La geolocalizzazione dell'indirizzo (latitudine e logitudine a livello di nazione) ip dato dal client al momento della richiesta.
 
+L'integrazione con l'applicativo dovrà essere coerente con la codebase già presente.
 ## Progettazione
 In questo capitolo verranno speigate in maniera dettagliata le decisioni architetturali prese per lo sviluppo dei due serivzi principali.
 ### Downstream Service
 Il servizio di downstream deve essere in grado di gestire in maniera trasparente l'utilizzo di versioni del protocollo IP differenti (`ipv4` e `ipv6`).
 Le operazioni specifiche ad una versione del protocollo `ip` verranno delegate ad una classe che, attraverso l'utilizzo del pattern *strategy*, sarà in grado di gestire le varie operazioni necessarie all'invio del messaggio `ICMP` in base alla verisone del protocollo ip utilizzata.
+
+``` bibtex
+@book{gamma1994design,
+  author    = {Gamma, Erich and Helm, Richard and Johnson, Ralph and Vlissides, John},
+  title     = {Design Patterns: Elements of Reusable Object-Oriented Software},
+  year      = {1994},
+  publisher = {Addison-Wesley},
+  address   = {Reading, MA},
+  isbn      = {0-201-63361-2}
+}
+```
 
 ### Upstream Service
 Il numero di server da interrogare potrebbe aumentare notevolmente nel tempo; Eseguire le chiamate in sequenza non è possibile, in quanto con un numero elevato di interrogazioni da fare l'esecuzione verrebbe sicuramente interrotta dal timeout imposto.
@@ -217,7 +232,19 @@ Questo wrapper risolve il problema della fragilità del risultato, poiché il pa
 Il linguaggio `golang` mette a disposizione due costrutti nativi per la gestione di routine parallele: le goroutine, funzioni parallele asincrone e i canali (`chan`) strutture dati in grado di gestire automaticamente la concorrenza senza provocare race conditions.
 I canali possono anche essere visti come dei semafori nella teoria della programmazione concorrente.
 
-Per implementare il bounded parallelism pattern, si è partiti dall'implementazione di una funzione che calcola il *checksum MD5* di tutti i file in una directory specificata (`https://go.dev/blog/pipelines`), riadattandolo secondo le necessità del sistema in sviluppo.
+L'implementazione del bounded parallelism pattern si è basata da una funzione citata in un blog nel sito ufficiale di `golang` che calcola il *checksum MD5* di tutti i file in una directory specificata, riadattandola secondo le necessità del sistema in sviluppo.
+
+``` bibtex
+@misc{ajmani2014pipelines,
+  author       = {Ajmani, Sameer},
+  title        = {Go Concurrency Patterns: Pipelines and Cancellation},
+  howpublished = {The Go Blog},
+  year         = {2014},
+  month        = {March},
+  url          = {https://go.dev/blog/pipelines},
+  note         = {Licensed under CC BY 4.0. Accessed: \today}
+}
+```
 
 Il funzionamento dell'algoritmo si basa su 3 canali:
 - Un canale che eroga uno alla volta ciascun indirizzo dei server da interrogare.
@@ -229,7 +256,6 @@ A ciascun worker vengono condivisi i tre canali creati, quando riceve un nuovo i
 
 ``` go
 func serverListWalk(
-    done <-chan struct{},
     serverIp []string
 ) (<-chan string, <-chan error) {
 	paths := make(chan string)
@@ -253,17 +279,14 @@ func serverListWalk(
 
 ``` go
 func worker(
-	conf config.AggregatorConfig,
 	done <-chan struct{},
 	servers <-chan string,
 	c chan<- result,
 	targetIp string,
-	fetchLatency func(conf config.AggregatorConfig, serverIp, targetIp string) (shared.Result, error),
+	fetchLatency func(serverIp, targetIp string) (Result, error),
 ) {
 	for serverIp := range servers {
-
-		latencyResult, err := fetchLatency(conf, serverIp, targetIp)
-
+		latencyResult, err := fetchLatency(serverIp, targetIp)
 		select {
 		case c <- result{latencyResult.Address, latencyResult.Value, err}:
 		case <-done:
@@ -275,18 +298,21 @@ func worker(
 #### Frontend
 Per lo sviluppo del frontend è stato coinvolto un esperto di user experience in modo tale da mantenere un'alto standard di usabilità e coerenza di stile con il resto dell'applicativo.
 La progettazione è partita dal design della vechia pagina, la nuova doveva riproporre le stesse feature in maniera più chiara e pulita.
+
 [wireframe del modello]
+
 Inizialmente è stato proposto un design semplice che riproponeva la pagina precedente, semplicemente modificando lo stile e rendendolo più moderno.
+
 [mockup iniziale]
+
 Dopo l'intervento dell'esperto il mockup si è evoluto dando la possibilità alla pagina di trasmettere più informazioni, nonostante il mantenimento delle stesse API.
+
 [mockup finale]
+
 Questo design finale mostra i dati in maniera chiara con uno stile riadattato al resto dell'applicazione, consentendo inoltre opzioni per nuove aggiunte future.
 ## Deployment
 ### Infrastructure
-Per permettere al frontend di mostrare i dati aggregati, è prima necessario uno passo intermedio.
-È necessario aggiungere una nuova API ai microservizi attuali, questa API avrà il compito di autenticare l'utente che richiede il servizio di latenza, interpellare il servizio di upstream e ricevere la risposta e successivamente recuperare le informazioni necessarie per il display delle informazioni all'interno della mappa come:
-- Le geolocalizzazione (latitudine, longitudine, nome città e nazione) di ciascun server interrogato.
-- La geolocalizzazione dell'indirizzo (latitudine e logitudine a livello di nazione) ip dato dal client al momento della richiesta.
+
 
 Dopo una analisi della semantica delle informazioni fornite da questo servizio, siamo giunti alla conclusione che nessun microservizio attualmente presente sarebbe adatto al contenimento di questa nuova API, è stata quindi necessaria la creazione di un nuovo microservizio all'interno dell'applicativo: `infrastructure`.
 
