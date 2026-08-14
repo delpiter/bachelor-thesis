@@ -12,21 +12,34 @@ FlashStart è una azienda che da oltre 20 anni protegge gli utenti nel mondo dig
 L'azienda fornisce filtraggio dei contenuti per utenti singoli o organizzazioni di ogni dimensione.
 FlashStart opera su una rete Anycast globale composta da più di 160 nodi distribuiti strategicamente in tutti i continenti, progettata per garantire elevata disponibilità, latenza minima e continuità operativa anche in caso di interruzioni o picchi di traffico.
 
-A partire dal 2026 FlashStart ha iniziato il più grande redesign dell'azienda, spostandosi da una applicazione legacy con architettura monolitica ad un applicativo moderno con una architettura basata su microservizi altamente scalabili.
+A partire dal 2026 FlashStart ha iniziato il più grande redesign dell'azienda, spostandosi da una applicazione con architettura monolitica ad un applicativo moderno con una architettura basata su microservizi altamente scalabili.
+In questo documento si farà riferimento ai due applicativi come: ***FlashStart Cloud***, il sistema attualmente in uso ma destinato alla dismissione, e ***FlashStart Internet Protection 2026***, la soluzione individuata per la sua sostituzione.
+
+Nel seguito della trattazione, per semplicità, si farà riferimento al nuovo sistema come *FlashStart 2026 (FS26)*.
 
 > Importanza del tool.
-Il tool è essenziale in quanto riesce a far capire ad un utente non esperto il concetto di rete anycast, mostrando in maniera chiara e coincisa che il server che sta rispondendo alle richieste è il server che risponded più velocemente.
 
-> Architettura attuale del servizio
+Il tool di controllo latenza è uno strumento fondamentale per il Network Admin in quanto consente di calcolare a priori la latenza di risposta del DNS (in millisecondi) che l’utilizzatore avrà utilizzando il servizio di protezione della navigazione.
 
-Il servizio latency si compone di due servizi separati.
+Essendo la protezione FlashStart “at DNS level”, una bassa latenza (tipicamente inferiore ai 10ms) è essenziale per garantire sicurezza e fluidità della navigazione in Internet allo stesso tempo.
 
-### Upstream Orchestrator
-L'upstream orchestrator è composto da due script.
-Uno controller php che gestisce le chiamate da parte dei client e uno script python esterno che gestisce il fanout (Fan-out generally refers to the act of spreading out from a single point or source to multiple destinations) verso gli endpoint downstream.
+Nel tool vengono anche stimati gli eventuali nodi alternativi in caso di problematiche (outage) del nodo preferenziale (best latency path). Essendo la rete basata su BGP Anycast, gli indirizzi IP del servizio di DNS sicuro sono presenti (annunciati) in ogni datacenter ed in caso di criticità del nodo principale, automaticamente l’utilizzatore continuerà a navigare filtrato e protetto su un nodo alternativo, con una latenza leggermente superiore.
 
-### Downstream 
-Il servizio di downstream è composto da un controller php che esegue comandi shell di sistema `ping/ping6` gestendo l'output come stringa rigida.
+### Architettura legacy del servizio
+
+Il servizio latency si compone di tre servizi separati:
+- Un upstream orchestrator
+- Diversi downstream, uno per ciascuno dei servizi di DNS resolver all'interno dei 160+ server della rete anycast.
+- La route `php` utilizzata da *FlashStart Cloud*.
+
+#### Upstream Orchestrator
+L'upstream orchestrator non è altro che un servizio dispiegato all'interno di ciascun DNS resolver.
+È composto da due script, un controller php che gestisce le chiamate da parte dei client e uno script python esterno che gestisce il fan-out (Fan-out generally refers to the act of spreading out from a single point or source to multiple destinations) verso gli endpoint downstream e l'aggregazione dei risultati.
+
+L'upstream orchestrator è inoltre responsabile del recupero della lista dei server da interrogare.
+
+#### Downstream 
+Il servizio di downstream è composto da un controller php che esegue comandi shell di sistema `ping/ping6` gestendo l'output come stringa rigida e da un parser.
 
 ```sh
 ping -c 3 ipv4Address 2>&1
@@ -48,11 +61,32 @@ rtt min/avg/max/mdev = 42.838/55.945/71.057/11.607 ms
 Il parser si aspetta come input una stringa con questo formato specifico andando a leggere precisamente la settima riga ricavando il tempo medio di risposta attraverso semplici operazioni con le stringhe.
 Questo metodo è altamente vulnerabile alle variazioni del sistema operativo target.
 
+#### Route PHP
+La route `php` riceve i dati dall'upstream orchestrator e inserisce informazioni aggiuntive riguardanti i server; Ha inoltre il compito di filtrare le risposte duplicate, causate da un dispiegamento di più DNS resolver in un unico firewall.
+
+L'oggetto finale che viene restituito al client è il seguente:
+
+```
+[
+    {
+        "name": "IT-Cesena",
+        "country_code": "IT",
+        "ip": "192.168.0.1",
+        "X": 30.2681,
+        "Y": , 60.8518,
+        "color": "#5AB500",
+        "ping": 40,
+        "load": 0
+    }
+]
+```
+
+[Deployment diagram del servizio].
 [Grafici del flusso dell'informazione].
 ## Analisi
 In questo capitolo vengono evidenziati i requisiti del progetto, analizzando i limiti imposti dalla quantità di risorse a disposizione da ciascun server all'interno della rete.
 ### Obbiettivi
-L'obbiettivo di questo progetto è quello di riscrivere un servizio di monitoraggio della latenza, partendo da un codice monolitico scritto in php, python e javascript.
+L'obbiettivo di questo progetto è quello di riscrivere un servizio di monitoraggio della latenza, partendo da un codice monolitico scritto in php e python.
 La riscrittura coinvolge 3 sezioni distinte:
 - Servizio downstream
     - Servizio localizzato all'interno di ciascuno dei server remoti nella rete utilizzato per richiedere il tempo di latenza tra il server e una macchina specifica in una qualsiasi location nel mondo.  
@@ -64,8 +98,8 @@ Per questi due progetti gli obbiettivi sono i seguenti:
 - Scalabilità orizzontale: Standardizzazione dei container Docker light-weight e orchestrazione con Docker-Compose per ambienti di test e produzione.
 - Garanzia di compatibilità (Golden Testing): Mantenimento rigoroso dei contratti API REST sia per i client dashboard sia per i servizi downstream/upstream legati all'infrastruttura MySQL e PostgreSQL.
 
-- Interfaccia grafica
-    - L'interfaccia grafica servirà per visualizzare i risultati ottenuti in maniera semplice e interpretabile anche da un utilizzatore non esperto del software.
+- Integrazione del servizio con *FlashStart 2026*. 
+    - In questa sezione dovranno essere riprogettati sia l'interfaccia grafica che la route `http` per l'esecuzione del servizio. 
 ### Limitazioni
 Per quanto riguarda i servizi di downstream e upstream le limitazioni sono le seguenti:
 - Il software deve essere il più leggero e efficiente possibile, in quanto dovrà essere dispiegato su server che devono gestire milioni di richieste giornaliere. Il software non deve assolutamente rallentare il funzionamento delle macchine fisiche.
@@ -126,8 +160,8 @@ Infine deve essere fatta la validazione del risultato ottenuto dall'esecuzione d
 - Se la perdita di pacchetti blocca il calcolo del tempo di risposta medio, la richiesta deve tornare `-1`.
 
 #### Integrazione con l'app
-Per poter usufruire di questo servizio è necessario un entry point all'interno dell'applicativo.
-
+Per permettere agli utenti di *FlashStart 2026* di usufruire di questo servizio è necessario un entry point all'interno dell'applicazione.
+Per mantenere una codebase coerente con il resto dell'applicativo sviluppato dagli altri developer, è stato scelto di progettare il nuovo entrypoint con il pattern `M.V.C.`.
 
 ## Progettazione
 In questo capitolo verranno speigate in maniera dettagliata le decisioni architetturali prese per lo sviluppo dei due serivzi principali.
@@ -140,7 +174,7 @@ Il numero di server da interrogare potrebbe aumentare notevolmente nel tempo; Es
 È necessario quindi eseguire le chiamate in parallelo.
 L'operazione è di tipo *embarassingly parallel* in quanto ogni singola esecuzione è indipendente dalle altre, sarebbe dunque facilmente parallelizzabile assegnando un thread a ciascuna richiesta da fare.
 Questo però andrebbe a consumare una elevata quantità di risorse, e ciò violerebbe il vincolo posto in precedenza (capitolo analisi).
-È stato scelto di limitare il numero di thread lavoratori sfruttando il _bounded concurrency pattern_.
+È stato scelto di limitare il numero di thread lavoratori sfruttando il _bounded parallelism pattern_.
 ### Pattern Comuni
 Entrambi i servizi comprendono la stessa logica per 2 concetti importanti:
 - Il caricamento dei valori di configurazione
@@ -154,15 +188,9 @@ Le variabili di configurazione vengono caricate attraverso variabili d'ambiente 
 Ciascun servizio ha una serie di configurazioni obbligatorie e una serie di configurazioni opzionali.
 Viene definita una classe con una serie di metodi per fare il parsing del valore delle variabili d'ambiente;
 Il fallimento di una di queste funzioni, dato da un valore non coerente con il tipo richiesto o la mancata presenza di una variabile obbligatoria risulta nell'immediata terminazione del programma.
-### Frontend
-Per lo sviluppo del frontend è stato coinvolto un esperto di user experience in modo tale da mantenere un'alto standard di usabilità e coerenza di stile con il resto della applicazione.
-La progettazione è partita dal design della vechia pagina, la nuova doveva riproporre le stesse feature in maniera più chiara e pulita.
-[wireframe del modello]
-Inizialmente è stato proposto un design semplice che riproponeva la pagina precedente, semplicemente modificando lo stile e rendendolo più moderno.
-[mockup iniziale]
-Dopo l'intervento dell'esperto il mockup si è evoluto dando la possibilità alla pagina di trasmettere più informazioni, nonostante il mantenimento delle stesse API.
-[mockup finale]
-Questo design finale mostra i dati in maniera chiara con uno stile riadattato al resto dell'applicazione, consentendo inoltre opzioni per nuove aggiunte future.
+### Integrazione con FlashStart 2026
+Per integrare il servizio di latenza con FlashStart2026 è necessaria l'aggiunta di 
+Per mantenere lo standard di progettazione del resto di FlashStart2026, è stato 
 ## Sviluppo
 Durante questa fase sono stati analizzati i linguaggi da utilizzare per la ricostruzione del servizio.
 Per rispettare i requisiti del problema (servizio efficiente e a basso consumo di risorse), il linguaggio selto deve essere un linguaggio compilato e non interpretato, linguaggi come python e php sono stati scartati a priori.
@@ -184,7 +212,17 @@ Quest'ultima feature permette una potenziale futura espansione del servizio attu
 
 Questo wrapper risolve il problema della fragilità del risultato, poiché il parsing del risultato non viene più fatto in base all'output di un comando di una bash. Il risultato finale viene calcolato sulla base dei risultati di ogni pacchetto che vengono salvati in locale.
 
-#### Bounded Concurrency
+#### Bounded Parallelism
+`https://go.dev/blog/pipelines`
+#### Frontend
+Per lo sviluppo del frontend è stato coinvolto un esperto di user experience in modo tale da mantenere un'alto standard di usabilità e coerenza di stile con il resto dell'applicativo.
+La progettazione è partita dal design della vechia pagina, la nuova doveva riproporre le stesse feature in maniera più chiara e pulita.
+[wireframe del modello]
+Inizialmente è stato proposto un design semplice che riproponeva la pagina precedente, semplicemente modificando lo stile e rendendolo più moderno.
+[mockup iniziale]
+Dopo l'intervento dell'esperto il mockup si è evoluto dando la possibilità alla pagina di trasmettere più informazioni, nonostante il mantenimento delle stesse API.
+[mockup finale]
+Questo design finale mostra i dati in maniera chiara con uno stile riadattato al resto dell'applicazione, consentendo inoltre opzioni per nuove aggiunte future.
 ## Deployment
 ### Infrastructure
 Per permettere al frontend di mostrare i dati aggregati, è prima necessario uno passo intermedio.
