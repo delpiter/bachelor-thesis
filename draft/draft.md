@@ -25,6 +25,42 @@ Essendo la protezione FlashStart “at DNS level”, una bassa latenza (tipicame
 
 Nel tool vengono anche stimati gli eventuali nodi alternativi in caso di problematiche (outage) del nodo preferenziale (best latency path). Essendo la rete basata su BGP Anycast, gli indirizzi IP del servizio di DNS sicuro sono presenti (annunciati) in ogni datacenter ed in caso di criticità del nodo principale, automaticamente l’utilizzatore continuerà a navigare filtrato e protetto su un nodo alternativo, con una latenza leggermente superiore.
 
+```bibtex
+// bgp
+@techreport{rfc4271,
+  author      = {Rekhter, Yakov and Li, Tony and Hares, Susan},
+  title       = {A Border Gateway Protocol 4 (BGP-4)},
+  institution = {IETF},
+  year        = {2006},
+  month       = {January},
+  number      = {RFC 4271},
+  url         = {https://www.rfc-editor.org/rfc/rfc4271},
+  note        = {Internet Standards Track document}
+}
+
+// ip
+@techreport{rfc791,
+  author      = {Postel, Jon},
+  title       = {Internet Protocol},
+  institution = {DARPA},
+  year        = {1981},
+  month       = {September},
+  number      = {RFC 791},
+  url         = {https://www.rfc-editor.org/rfc/rfc791}
+}
+
+// icmp
+@techreport{rfc792,
+  author      = {Postel, Jon},
+  title       = {Internet Control Message Protocol},
+  institution = {DARPA},
+  year        = {1981},
+  month       = {September},
+  number      = {RFC 792},
+  url         = {https://www.rfc-editor.org/rfc/rfc792}
+}
+```
+
 ### Architettura legacy del servizio
 
 Il servizio latency si compone di tre servizi separati:
@@ -108,12 +144,15 @@ Per quanto riguarda i servizi di downstream e upstream le limitazioni sono le se
 I due servizi principali sono stati progettati seguendo il pattern di programmazione MVC.
 - Devono esporre delle api ben definite (View), analizzare le richieste ricevute (Controller) e eseguire le operazioni sui dati (Model).
 #### Upstream service
-Il servizio di upstream deve interrogare tutti i server e validare i valori di output.
-Deve esporre due interfaccie API:
-- `GET api/latency/{network}`
-- `GET api/latency/cloud/{network}`
+Il servizio di upstream deve recuperare la lista di indirizzi ip dei server, interrogare tutti gli indirizzi e validare i valori di output.
 
-La risposta ottenuta dalle due interfacce deve essere omogenea.
+Questo servizio deve esporre due interfacce API:
+- `GET api/latency/{network}`: interfaccia utilizzata da altri servizi all'interno di *FlashStart Cloud*, non strettamente necessaria per la modernizzazione del servizio, ma mantenuta per la retrocompatibilità.
+- `GET api/latency/cloud/{network}`: interfaccia utilizzata direttamente dal servizio di latency.
+
+Il parametro del percorso `{network}` deve essere un indirizzo ip valido che corrisponde all'indirizzo della macchina su cui devono essere calcolati i tempi di risposta dei vari server.
+
+La risposta ottenuta dalle due interfacce deve essere omogenea e deve inoltre corrispondere con la struttura originale del messaggio per mantenere la retrocompatibilità.
 ```json
 [
     ["<ipAddress>", "latencyValue"],
@@ -121,53 +160,59 @@ La risposta ottenuta dalle due interfacce deve essere omogenea.
     ...
 ]
 ```
-La struttura del messaggio di risposta è stata riportata dal tipo di ritorno della vecchia API.
+Dove `<ipAddress>` è l'indirizzo del server downstream che ha risposto con il `latencyValue` corrispondente.
 
 La richiesta si divide in due sezioni distinte
 
 > Recupero della lista dei client
 
-In base alla richiesta ricevuta viene selezionata una lista diversa di server da interrogare.
+In base alla rotta chiamata deve essere selezionata una lista diversa di server da interrogare.
 - `api/latency/` seleziona gli host fisici attualmente attivi.
 - `api/latency/cloud` seleziona una lista di host dispiegati sul cloud.
-
-[TODO] check if correct
 
 Il fallimento della richiesta o il superamento di una deadline pre-impostata comporta il fallimento della richiesta di latenza.
 
 > Aggregazione dei valori
 
-In questa sezione viene validato ciascun indirizzo ip ottenuto in precedenza; Per ogni host valido viene interrogato il server server downstream corrispondente per il valore della latenza.
+In questa sezione deve essere validato ciascun indirizzo ip ottenuto in precedenza.
+Per ogni host valido veerrà interrogato il server server downstream corrispondente per ottenere il relativo valore della latenza rispetto all'indirizzo fornito dall'utente.
 Ogni richiesta deve essere trattata in maniera indipendente dalle altre: il fallimento di una richiesta non deve compromettere l'intera aggregazione.
-Successivamente vengono normalizzati i risultati ottenuti per aderire al modello di risposta analizzato in precedenza.
-- Se una richiesta fallisce, impiega troppo tempo o ritorna un codice http diversa da `2xx`, comporta l'assegnazione del valore `-1` alla richiesta a quel server.
+Una volta ottenuti, i risultati devono essere normalizzati per aderire al modello di risposta analizzato in precedenza.
+- Se una richiesta fallisce, impiega troppo tempo o ritorna un codice http diverso da `2xx`, deve essere assegnato il valore `-1` alla richiesta di quel server.
 
-Infine la lista di valori deve essere ordinata in ordine ascendente secondo la latenza.
+Infine la lista di valori deve essere ordinata in ordine ascendente secondo il valore della latenza.
+
 #### Downstream service
-Il servizio di downstream comprende 3 sezioni:
-- Esposizione dell'interfaccia API per la richiesta della latenza.
-`GET /api/latency`
-La richiesta dovrà ritornare un semplice valore che rappresenta il tempo di risposta medio del server interrogato.
+Il servizio di downstream deve esporre una unica interfacca API.
+`GET /api/latency`.
+Una richiesta valida deve contenere un parametro `network` nella richiesta `http` e come valore deve essere presente un indirizzo ip valido tra ipv4 e ipv6.
+Appena ricevuta la richiesta, essa deve essere validata, una richiesta con indirizzo assente o non valido deve essere rifiutata immediatamente e ritornare il codie `403`.
 
-Una richiesta valida deve contenere un parametro `network` nella richiesta `http` e come valore deve essere presente un indirizzo ip valido sia ipv4 che ipv6.
-- Appena ricevuta la richiesta, essa deve essere validata, una richiesta con indirizzo assente o non valido deve essere rifiutata immediatamente e ritornare il codie `403`.
+La richiesta dovrà ritornare un semplice valore numerico che rappresenta il tempo di risposta medio di un ping dal server interrogato alla macchina con l'indirizzo ip dato dal campo `network` della richiesta.
+
+È responsabilità dell'utente assicurasri che la macchina con l'indirizzo ip dato in input abbia il protocollo `ICMP` attivo.
+- In caso non venga attivato, la richiesta deve fallire (`host unreachable`).
 
 Una volta validato l'indirizzo viene eseguito il ping della macchina specificata, questo passaggio deve essere indipendente dal tipo di versione dell'indirizzo che è stato ricevuto.
-- Questa operazione ha delle deadline strette per evitare di consumare troppe risorse, se una richiesta ping eccede questa deadline il pacchetto viene considerato perso.
-- Se in un qualsiasi momento accade un errore, la richiesta non deve fallire, invece si deve attivare un meccanismo di fallback e ritornare un valore di default (`-1`).
+- Questa operazione ha delle deadline strette per evitare di consumare troppe risorse; La deadline deve essere derivato dal numero di pacchetti `ICMP` inviati più un piccolo buffer fisso.
+
+Se in un qualsiasi momento accade un errore, la richiesta non deve fallire, invece si deve attivare un meccanismo di fallback e ritornare un valore di default (`-1`).
 
 Infine deve essere fatta la validazione del risultato ottenuto dall'esecuzione del ping.
 - Se la perdita di pacchetti blocca il calcolo del tempo di risposta medio, la richiesta deve tornare `-1`.
 
 #### Integrazione con FlashStart 2026
-Per permettere al frontend di mostrare i dati aggregati, è prima necessario uno passo intermedio.
-È necessario aggiungere una nuova API ai microservizi attuali, questa API avrà il compito di autenticare l'utente che richiede il servizio di latenza, interpellare il servizio di upstream e ricevere la risposta e successivamente recuperare le informazioni necessarie per il display delle informazioni all'interno della mappa come:
-- Le geolocalizzazione (latitudine, longitudine, nome città e nazione) di ciascun server interrogato.
+L'integrazione con *FlashStart 2026* serve per permettere al frontend dell'applicazione di mostrare i dati ottenuti.
+
+Deve essere aggiunta una nuova API ai microservizi attuali, questa API ha il compito di autenticare l'utente che richiede il servizio di latenza, controllare se ha i permessi necessari per eseguire l'operazione, interrogare il servizio di upstream, ricevere la risposta e infine recuperare le informazioni necessarie per mostrare i risultati all'interno della mappa.
+
+Sono necessarie le seguenti informazioni aggiuntive:
+- Le geolocalizzazione (latitudine e longitudine a livello di città, nome città e nazione) di ciascun server interrogato.
 - La geolocalizzazione dell'indirizzo (latitudine e logitudine a livello di nazione) ip dato dal client al momento della richiesta.
 
 L'integrazione con l'applicativo dovrà essere coerente con la codebase già presente.
 ## Progettazione
-In questo capitolo verranno speigate in maniera dettagliata le decisioni architetturali prese per lo sviluppo dei due serivzi principali.
+In questo capitolo verranno speigate in maniera dettagliata le decisioni architetturali prese per lo sviluppo del servizio.
 ### Downstream Service
 Il servizio di downstream deve essere in grado di gestire in maniera trasparente l'utilizzo di versioni del protocollo IP differenti (`ipv4` e `ipv6`).
 Le operazioni specifiche ad una versione del protocollo `ip` verranno delegate ad una classe che, attraverso l'utilizzo del pattern *strategy*, sarà in grado di gestire le varie operazioni necessarie all'invio del messaggio `ICMP` in base alla verisone del protocollo ip utilizzata.
@@ -190,28 +235,31 @@ L'operazione è di tipo *embarassingly parallel* in quanto ogni singola esecuzio
 Questo però andrebbe a consumare una elevata quantità di risorse, e ciò violerebbe il vincolo posto in precedenza (capitolo analisi).
 È stato scelto di limitare il numero di thread lavoratori sfruttando il _bounded parallelism pattern_.
 ### Pattern Comuni
-Entrambi i servizi comprendono la stessa logica per 2 concetti importanti:
-- Il caricamento dei valori di configurazione
+Entrambi i servizi utilizzeranno la stessa logica per 2 concetti importanti:
+- Il caricamento dei valori di configurazione.
 - La gestione di middleware nelle richieste http.
 #### Gestione dei middleware
 Si vuole poter eseguire multipli middleware in sequenza a seguito di una richista http per gestire il logging strutturato, il disaster recovery ed altri eventuali controlli.
 Il sistema per la gestione dei middleware in sequenza utilizza il design pattern *chain of responsibility* che permette di passare la richiesta lungo una catena di "handler".
 Al ricevimento di una richiesta dopo averla processata, un handler può decidere se passarla al prossimo handler all'interno della catena o se interrompere l'esecuzione.
 #### Caricamento delle variabili di configurazione ??
-Le variabili di configurazione vengono caricate attraverso variabili d'ambiente all'interno della macchina.
-Ciascun servizio ha una serie di configurazioni obbligatorie e una serie di configurazioni opzionali.
+È necessario poter caricare delle variabili di ambiente come configurazione del servizio.
+Ciascun servizio ha una serie di variabili obbligatorie e opzionali.
+Una variabile obbligatoria deve essere presente all'avvio del servizio, la mancata presenza deve causare una chiusura istantanea del servizio; Le variabili opzionali possono non essere presenti durante l'inizializzazione, in questo caso verranno decisi dei valori di default.
+
 Viene definita una classe con una serie di metodi per fare il parsing del valore delle variabili d'ambiente;
+
 Il fallimento di una di queste funzioni, dato da un valore non coerente con il tipo richiesto o la mancata presenza di una variabile obbligatoria risulta nell'immediata terminazione del programma.
 ### Integrazione con FlashStart 2026
-Per integrare il servizio di latenza con FlashStart2026 è necessaria l'aggiunta di 
 Si vuole permettere agli utilizzatori di *FlashStart 2026* di usufruire del servizio di latenza.
 È dunque necessario aggiungere un entry point all'interno dell'applicazione.
-Per mantenere una codebase coerente con il resto dell'applicativo sviluppato dagli altri developer in azienda, è stato scelto di progettare il nuovo entrypoint con il pattern `M.V.C.`.
+Per mantenere una codebase coerente con il resto dell'applicativo sviluppato dagli altri developer in azienda, è stato scelto di progettare il nuovo entrypoint con il pattern `M.V.C`.
+
 ## Sviluppo
-Durante questa fase sono stati analizzati i linguaggi da utilizzare per la ricostruzione del servizio.
-Per rispettare i requisiti del problema (servizio efficiente e a basso consumo di risorse), il linguaggio selto deve essere un linguaggio compilato e non interpretato, linguaggi come python e php sono stati scartati a priori.
-Il secondo requisito è la possibilità di gestire codice in maniera concorrente.
-Dati questi due principali requisiti è stato scelto `go` come linguaggio di scrittura del servizio lato backend, poiché è un linguaggio compilato e soprattutto supporta in maniera nativa e facilitata la gestione di routine concorrenti, concetto fondamentale per lo sviluppo degli strumenti richiesti.
+Durante questa fase sono stati analizzati i possibili linguaggi da utilizzare per la ricostruzione del servizio.
+Per rispettare i requisiti del problema (servizio efficiente e a basso consumo di risorse), il linguaggio scelto deve essere un linguaggio compilato e non interpretato, linguaggi come python e php sono stati scartati a priori.
+Il secondo requisito è la possibilità di gestire codice in maniera parallela.
+Dati questi due principali requisiti è stato scelto `go` come linguaggio di scrittura dei servizi di upstream e downstream, poiché è un linguaggio compilato e soprattutto supporta in maniera nativa e facilitata la gestione di routine parallele e fornisce inoltre una struttura dati apposita (canale o `chan`) per la gestione concorrente dei dati, concetto fondamentale per lo sviluppo degli strumenti richiesti.
 ### Implementation Highlight
 #### Esecuzione del Ping
 L'esecuzione del ping sul server è l'operazione più importante del sistema.
@@ -295,7 +343,7 @@ func worker(
 	}
 }
 ```
-#### Frontend
+#### Integrazione con FlashStart 2026
 Per lo sviluppo del frontend è stato coinvolto un esperto di user experience in modo tale da mantenere un'alto standard di usabilità e coerenza di stile con il resto dell'applicativo.
 La progettazione è partita dal design della vechia pagina, la nuova doveva riproporre le stesse feature in maniera più chiara e pulita.
 
