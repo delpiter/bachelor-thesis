@@ -59,6 +59,18 @@ Nel tool vengono anche stimati gli eventuali nodi alternativi in caso di problem
   number      = {RFC 792},
   url         = {https://www.rfc-editor.org/rfc/rfc792}
 }
+
+// http
+@techreport{rfc2616,
+  author      = {Fielding, Roy and Gettys, Jim and Mogul, Jeffrey and Frystyk, Henrik and Masinter, Larry and Leach, Paul and Berners-Lee, Tim},
+  title       = {Hypertext Transfer Protocol -- HTTP/1.1},
+  institution = {IETF},
+  year        = {1999},
+  month       = {June},
+  number      = {RFC 2616},
+  url         = {https://www.rfc-editor.org/rfc/rfc2616},
+  note        = {Obsoleted by RFC 7230--7235}
+}
 ```
 
 ### Architettura legacy del servizio
@@ -210,7 +222,7 @@ Sono necessarie le seguenti informazioni aggiuntive:
 - Le geolocalizzazione (latitudine e longitudine a livello di città, nome città e nazione) di ciascun server interrogato.
 - La geolocalizzazione dell'indirizzo (latitudine e logitudine a livello di nazione) ip dato dal client al momento della richiesta.
 
-L'integrazione con l'applicativo dovrà essere coerente con la codebase già presente.
+L'integrazione con l'applicativo dovrà essere coerente con la codebase già esistente.
 ## Progettazione
 In questo capitolo verranno speigate in maniera dettagliata le decisioni architetturali prese per lo sviluppo del servizio.
 ### Downstream Service
@@ -229,48 +241,116 @@ Le operazioni specifiche ad una versione del protocollo `ip` verranno delegate a
 ```
 
 ### Upstream Service
-Il numero di server da interrogare potrebbe aumentare notevolmente nel tempo; Eseguire le chiamate in sequenza non è possibile, in quanto con un numero elevato di interrogazioni da fare l'esecuzione verrebbe sicuramente interrotta dal timeout imposto.
+Il numero di server da interrogare potrebbe aumentare notevolmente nel tempo; Eseguire le chiamate in sequenza non è possibile, in quanto con un numero elevato di interrogazioni da condurre l'esecuzione verrebbe sicuramente interrotta dal timeout imposto.
 È necessario quindi eseguire le chiamate in parallelo.
 L'operazione è di tipo *embarassingly parallel* in quanto ogni singola esecuzione è indipendente dalle altre, sarebbe dunque facilmente parallelizzabile assegnando un thread a ciascuna richiesta da fare.
 Questo però andrebbe a consumare una elevata quantità di risorse, e ciò violerebbe il vincolo posto in precedenza (capitolo analisi).
 È stato scelto di limitare il numero di thread lavoratori sfruttando il _bounded parallelism pattern_.
-### Pattern Comuni
-Entrambi i servizi utilizzeranno la stessa logica per 2 concetti importanti:
-- Il caricamento dei valori di configurazione.
-- La gestione di middleware nelle richieste http.
-#### Gestione dei middleware
-Si vuole poter eseguire multipli middleware in sequenza a seguito di una richista http per gestire il logging strutturato, il disaster recovery ed altri eventuali controlli.
+
+### Gestione dei middleware
+A seguito di una richista http potrebbe essere necessario eseguire multiple funzioni con scopo diverso.
+Si vuole poter eseguire le funzioni in sequenza, avendo la possibilità di interrompere l'esecuzione in qualsiasi momento.
+
 Il sistema per la gestione dei middleware in sequenza utilizza il design pattern *chain of responsibility* che permette di passare la richiesta lungo una catena di "handler".
 Al ricevimento di una richiesta dopo averla processata, un handler può decidere se passarla al prossimo handler all'interno della catena o se interrompere l'esecuzione.
-#### Caricamento delle variabili di configurazione ??
+
+Alcuni esempi di handler possono essere: la gestione del logging strutturato e il disaster recovery.
+
+Sia il servizio di downstream che di upstream utilizzeranno questa struttura.
+<!-- #### Caricamento delle variabili di configurazione
 È necessario poter caricare delle variabili di ambiente come configurazione del servizio.
 Ciascun servizio ha una serie di variabili obbligatorie e opzionali.
 Una variabile obbligatoria deve essere presente all'avvio del servizio, la mancata presenza deve causare una chiusura istantanea del servizio; Le variabili opzionali possono non essere presenti durante l'inizializzazione, in questo caso verranno decisi dei valori di default.
 
 Viene definita una classe con una serie di metodi per fare il parsing del valore delle variabili d'ambiente;
 
-Il fallimento di una di queste funzioni, dato da un valore non coerente con il tipo richiesto o la mancata presenza di una variabile obbligatoria risulta nell'immediata terminazione del programma.
+Il fallimento di una di queste funzioni, dato da un valore non coerente con il tipo richiesto o la mancata presenza di una variabile obbligatoria risulta nell'immediata terminazione del programma. -->
 ### Integrazione con FlashStart 2026
 Si vuole permettere agli utilizzatori di *FlashStart 2026* di usufruire del servizio di latenza.
-È dunque necessario aggiungere un entry point all'interno dell'applicazione.
+È dunque necessario aggiungere un entrypoint all'interno della nuova applicazione.
 Per mantenere una codebase coerente con il resto dell'applicativo sviluppato dagli altri developer in azienda, è stato scelto di progettare il nuovo entrypoint con il pattern `M.V.C`.
 
+Si divide l'entrypoint in 4 sezioni:
+1. Un `LatencyController`, classe intermedia tra la view e il servizio.
+2. Il `LatencyService`, contenente l'effettiva business logic e il controllo dei permessi.
+3. Una serie di Repositories che fungono da tramite tra il servizio e le fonti di dati come un database, per `GeolocalizationRepository` e `ServerDataRepository`, o come il servizio upstream per `LatencyRepository`.
+
+Al fine di mantenere separata la logica del servizio con l'autenticazione e autorizzazione, questi ultimi verranno controllati per tramite del pattern *decorator*, sfruttando il codice già presente.
+
+Questo sistema permette una elevata semplicità di manutenzione grazie alla accurata divisione dei concetti.
 ## Sviluppo
 Durante questa fase sono stati analizzati i possibili linguaggi da utilizzare per la ricostruzione del servizio.
-Per rispettare i requisiti del problema (servizio efficiente e a basso consumo di risorse), il linguaggio scelto deve essere un linguaggio compilato e non interpretato, linguaggi come python e php sono stati scartati a priori.
+Per rispettare i requisiti del problema (servizio a basso consumo di risorse), il linguaggio scelto deve essere un linguaggio compilato e non interpretato; Linguaggi come python e php sono stati scartati a priori.
+
 Il secondo requisito è la possibilità di gestire codice in maniera parallela.
 Dati questi due principali requisiti è stato scelto `go` come linguaggio di scrittura dei servizi di upstream e downstream, poiché è un linguaggio compilato e soprattutto supporta in maniera nativa e facilitata la gestione di routine parallele e fornisce inoltre una struttura dati apposita (canale o `chan`) per la gestione concorrente dei dati, concetto fondamentale per lo sviluppo degli strumenti richiesti.
 ### Implementation Highlight
-#### Esecuzione del Ping
+#### Wrapper ICMP
 L'esecuzione del ping sul server è l'operazione più importante del sistema.
-La versione legacy del software eseguiva semplicemente il comando `ping -c MAX_PING <network>` su una shell bash creata sul momento ed eseguiva poi il parsing del risultato. Il parser si aspetta un formato molto specifico del risultato, il ché rendeva il sistema molto fragile ad errori, un minimo cambiamento al formato standard della risposta del comando ping eseguito su una shell linux e la risposta veniva considerata come un fallimento.
+La versione legacy del software eseguiva semplicemente il comando `ping -c MAX_PING <network>` eseguendo poi una normalizzazione del risultato. Come detto in precedenza il parser si basa sulla manipolazione di una stringa con indici di riga fissi; Questo rende il sistema molto fragile ad errori, una piccola variazione nel formato del risultato del comando `ping` potrebbe causare il fallimento della richiesta.
 
 Il nuovo sistema è stato creato con l'affidabilità alla base.
 Al posto di eseguire una shell bash, è stata utilizzata la libreria di `golang.org/x/net/icmp` per eseguire chiamate `ICMP` attraverso la rete; A questa libreria è stato creato un wrapper che permetta l'utilizzo facilitato di una libreria altrimenti altamente complessa.
 
-Il wrapper permette di eseguire una serie di messaggi `ICMP:Echo` con id univoci in modo da filtrare pacchetti `ICMP` non voluti, attraverso il pattern strategy definito in precedenza, permette di inviare in maniera trasparente la richiesta sia su una rete IPv4 che su una rete IPv6, in base all'indirizzo fornito dall'utente. Infine permette opzionalmente la possibilità di impostare il `TTL` ad ogni pacchetto.
+Il wrapper permette di eseguire una serie di messaggi `ICMP:Echo` con id univoci in modo da filtrare pacchetti `ICMP` non inviato dal sistema, attraverso il pattern strategy definito in precedenza, permette di inviare in maniera trasparente la richiesta sia su una rete IPv4 che su una rete IPv6, in base all'indirizzo fornito dall'utente. Infine permette opzionalmente la possibilità di impostare il `TTL` ad ogni pacchetto.
+
 ``` go
-// insert example code
+func (con *EchoConnection) SendEchoWithTTL(content string, ttl int) (*EchoResponse, error) {
+	// save request id to filter it later
+	requestID := rand.Intn(RANDOM_ID_MAX)
+
+	// Build ICMP echo request
+	msg := icmp.Message{
+		Type: con.ipVersionStrategy.GetIcmpEchoType(),
+		Code: 0,
+		Body: &icmp.Echo{
+			ID:   requestID,
+			Seq:  con.sequenceNumber,
+			Data: []byte(content),
+		},
+	}
+
+	con.ipVersionStrategy.SetTTL(ttl)
+
+	b, err := msg.Marshal(nil)
+    // ... error check
+
+    // sends the message and waits its answer
+	start := time.Now()
+	if _, err := con.connection.WriteTo(b, con.address); err != nil {
+		err = errors.New("Connection unavailable")
+		slog.Error(err.Error())
+		return nil, err
+	}
+
+	// Wait for a reply
+	con.connection.SetReadDeadline(time.Now().Add(timeout))
+	for {
+		n, peer, err := con.connection.ReadFrom(reply)
+		rtt := time.Since(start)
+
+		if err != nil {
+			// ... Timeout — no response
+		}
+
+		// Parse the ICMP reply
+		parsedReply, err := icmp.ParseMessage(reply)
+		// ... error check
+		responseType := con.ipVersionStrategy.CheckResponseType(parsedReply.Type)
+		// If its not the package sent before, continue listening
+		// fmt.Printf("Response: %s from addr: %s\n", parsedReply.Type, peer.String())
+		switch responseType {
+		case networkstrategy.ICMPEchoReply:
+            // handle echo reply
+		case networkstrategy.ICMPTimeExceeded:
+            // handle time exceeded error
+		default:
+		}
+
+		response := NewEchoResponse(/* response data */)
+		return response, nil
+	}
+}
 ```
 Quest'ultima feature permette una potenziale futura espansione del servizio attuale con l'aggiunta del traceroute.
 
@@ -360,20 +440,22 @@ Dopo l'intervento dell'esperto il mockup si è evoluto dando la possibilità all
 Questo design finale mostra i dati in maniera chiara con uno stile riadattato al resto dell'applicazione, consentendo inoltre opzioni per nuove aggiunte future.
 ## Deployment
 ### Infrastructure
-
-
-Dopo una analisi della semantica delle informazioni fornite da questo servizio, siamo giunti alla conclusione che nessun microservizio attualmente presente sarebbe adatto al contenimento di questa nuova API, è stata quindi necessaria la creazione di un nuovo microservizio all'interno dell'applicativo: `infrastructure`.
+Dopo una analisi della semantica delle informazioni fornite da questo servizio, insieme al team di sviluppo si è giunti alla conclusione che nessun microservizio attualmente presente sarebbe stato adatto al contenimento di questa nuova API, è stata quindi necessaria la creazione di un nuovo microservizio all'interno di *FlashStart 2026*: `infrastructure`.
 
 Il nuovo microservizio servirà per tutte quelle nuove feature che implementano un qualsiasi tipo di tool di supporto all'utilizzo dell'applicazione.
 Per la creazione del nuovo microservizio è stato necessario configurare diversi aspetti:
-- Ambiente di testing delle api e di qualsiasi business logic interna al nuovo microservizio.
-- Nuovo database direttamente collegato al microservizio
-- Due dockerfile, uno per l'ambiente di development e testing e uno per l'ambiente di esercizio (production), necessario per poi dispiegare il nuovo microservizio all'interno di un cluster kuberneetes.
+- Ambiente di testing dei sorgenti del nuovo microservizio.
+- Nuovo database con un collegamento diretto.
+- Due dockerfile, uno per l'ambiente di development e testing e uno per l'ambiente di esercizio (staging), necessario per poi dispiegare il nuovo microservizio all'interno di un cluster kuberneetes.
+
 ### Backend
-Per il deploy dei servizi di downstream e upstream all'interno della infrastruttura esistente sono stati creati dei dockerfile ad hoc contenenti i file binari compilati dei due servizi.
+Per il dispiegamento dei servizi di downstream e upstream all'interno della infrastruttura esistente sono stati creati dei dockerfile ad hoc contenenti i file binari compilati dei due servizi.
 Per evitare di caricare sui server codice binario inutilizzato (come il compilatore del linguaggio), è stato creato un dockerfile multistage
 - Un primo stage che scarica le librerie necessarie e compila i codici sorgenti in un unico file binaro eseguibile.
 - Un secondo stage che utilizzando una immagine leggera (`FROM debian:bookworm-slim`) elimina qualsiasi file non necessario e successivamente copia il file binario creato al primo stage, minimizzando le risorse necessarie per l'esecuzione del servizio.
+
+A differenza del vecciho downstream, dispiegato su ciascun DNS resolver (multipli container in una sola macchina), il nuovo servizio verrà direttamente inserito all'interno sistema bare metal.
+Questo porta a due migliorie, [TODO] ridotto uso di memoria -> uno solo per macchina al posto di diversi, non è più necessario filtrare i risultati duplicati, poiché solo un risultato verrà ritornato per macchina fisica.
 ## Analisi dei Risultati
 ### Testing automatico
 ### Sperimentazioni
