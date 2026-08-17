@@ -1,13 +1,20 @@
 # Servizio di diagnotica della latenza in una rete anycast
+## Sommario
+Il progetto è incentrato sulla modernizzazione architetturale e sul re-engineering dei 
+servizi di misurazione della latenza in una rete anycast. Il sistema preesistente, 
+basato su architettura PHP/Apache e script di fan-out Python, soffriva di limitazioni 
+prestazionali, elevato overhead di CPU/memoria, una bassa affidabilità di risposta ed eccessiva rigidità nella gestione dell'I/O concorrente.
+
+Il progetto ha coinvolto la riscrittura di due sotto-servizi principali. Il servizio di 
+downstream, incaricato di calcolare la latenza tra il server stesso e la macchina 
+specificata in input, era originariamente scritto in PHP ed è stato riprogettato in Go, 
+adottando i principi della Clean Architecture e un design basato su design pattern, massimizzando l'affidabilità della risposta. Il servizio di upstream, responsabile dell'aggregazione dei dati raccolti dalle interrogazioni dei server di downstream, era originariamente scritto in Python ed è stato anch'esso riscritto in Go, sfruttando il modello di concorrenza nativo del linguaggio (goroutine e channel) per superare la rigidità nella gestione dell'I/O concorrente riscontrata nel sistema preesistente.
+
+Il nuovo sistema è stato validato confrontandolo con l'architettura preesistente, 
+mostrando un miglioramento dell'affidabilità del servizio e una riduzione dell'utilizzo 
+di memoria sui server di dispiegamento. Il lavoro ha incluso inoltre la progettazione 
+di un'interfaccia utente modernizzata per il nuovo applicativo.
 ## Introduzione
-Il presente documento descrive le attività svolte da Foschi Gioele durante il periodo di tirocinio aziendale presso FlashStart, sotto la supervisione del Prof. Mirko Viroli, i Tutor Aziendali Francesco Collini e Stefano Babini. 
-Il progetto è stato incentrato sulla modernizzazione architetturale e sul re-engineering ad alte prestazioni dei servizi di misurazione della latenza in una ***rete anycast*** (add definition).
-Il sistema preesistente basato su architettura PHP/Apache e script di ***fan-out*** (add definition) Python soffriva di limitazioni prestazionali, elevato overhead di CPU/memoria ed eccessiva rigidità nella gestione dell'I/O concorrente.
-## Background
-// Maybe move company context up before the project definition.
-
-> Contesto aziendale
-
 FlashStart è una azienda che da oltre 20 anni protegge gli utenti nel mondo digitale con soluzioni di sicurezza informatica attraverso il filtraggio dei contenuti basato su DNS e intelligenza artificiale.
 L'azienda fornisce filtraggio dei contenuti per utenti singoli o organizzazioni di ogni dimensione.
 FlashStart opera su una rete Anycast globale composta da più di 160 nodi distribuiti strategicamente in tutti i continenti, progettata per garantire elevata disponibilità, latenza minima e continuità operativa anche in caso di interruzioni o picchi di traffico.
@@ -17,13 +24,12 @@ In questo documento si farà riferimento ai due applicativi come: ***FlashStart 
 
 Nel seguito della trattazione, per semplicità, si farà riferimento al nuovo sistema come *FlashStart 2026 (FS26)*.
 
-> Importanza del tool.
+## Background
+Lo strumento di controllo latenza è uno strumento fondamentale per il Network Admin in quanto consente di calcolare a priori la latenza di risposta del DNS (in millisecondi) che l’utilizzatore avrà utilizzando il servizio di protezione della navigazione.
 
-Il tool di controllo latenza è uno strumento fondamentale per il Network Admin in quanto consente di calcolare a priori la latenza di risposta del DNS (in millisecondi) che l’utilizzatore avrà utilizzando il servizio di protezione della navigazione.
+Essendo la protezione FlashStart "at DNS level", una bassa latenza (tipicamente inferiore ai 10ms) è essenziale per garantire sicurezza e fluidità della navigazione in Internet allo stesso tempo.
 
-Essendo la protezione FlashStart “at DNS level”, una bassa latenza (tipicamente inferiore ai 10ms) è essenziale per garantire sicurezza e fluidità della navigazione in Internet allo stesso tempo.
-
-Nel tool vengono anche stimati gli eventuali nodi alternativi in caso di problematiche (outage) del nodo preferenziale (best latency path). Essendo la rete basata su BGP Anycast, gli indirizzi IP del servizio di DNS sicuro sono presenti (annunciati) in ogni datacenter ed in caso di criticità del nodo principale, automaticamente l’utilizzatore continuerà a navigare filtrato e protetto su un nodo alternativo, con una latenza leggermente superiore.
+Nello strumento vengono anche stimati gli eventuali nodi alternativi in caso di problematiche (outage) del nodo preferenziale (best latency path). Essendo la rete basata su BGP Anycast, gli indirizzi IP del servizio di DNS sicuro sono presenti (annunciati) in ogni datacenter ed in caso di criticità del nodo principale, automaticamente l’utilizzatore continuerà a navigare filtrato e protetto su un nodo alternativo, con una latenza leggermente superiore.
 
 ```bibtex
 // bgp
@@ -442,7 +448,7 @@ Questo design finale mostra i dati in maniera chiara con uno stile riadattato al
 ### Infrastructure
 Dopo una analisi della semantica delle informazioni fornite da questo servizio, insieme al team di sviluppo si è giunti alla conclusione che nessun microservizio attualmente presente sarebbe stato adatto al contenimento di questa nuova API, è stata quindi necessaria la creazione di un nuovo microservizio all'interno di *FlashStart 2026*: `infrastructure`.
 
-Il nuovo microservizio servirà per tutte quelle nuove feature che implementano un qualsiasi tipo di tool di supporto all'utilizzo dell'applicazione.
+Il nuovo microservizio servirà per tutte quelle nuove feature che implementano un qualsiasi tipo di strumento di supporto all'utilizzo dell'applicazione.
 Per la creazione del nuovo microservizio è stato necessario configurare diversi aspetti:
 - Ambiente di testing dei sorgenti del nuovo microservizio.
 - Nuovo database con un collegamento diretto.
@@ -454,13 +460,11 @@ Per evitare di caricare sui server codice binario inutilizzato (come il compilat
 - Un primo stage che scarica le librerie necessarie e compila i codici sorgenti in un unico file binaro eseguibile.
 - Un secondo stage che utilizzando una immagine leggera (`FROM debian:bookworm-slim`) elimina qualsiasi file non necessario e successivamente copia il file binario creato al primo stage, minimizzando le risorse necessarie per l'esecuzione del servizio.
 
-A differenza del vecciho downstream, dispiegato su ciascun DNS resolver (multipli container in una sola macchina), il nuovo servizio verrà direttamente inserito all'interno sistema bare metal.
-Questo porta a due migliorie, [TODO] ridotto uso di memoria -> uno solo per macchina al posto di diversi, non è più necessario filtrare i risultati duplicati, poiché solo un risultato verrà ritornato per macchina fisica.
+A differenza del vecciho downstream, dispiegato su ciascun DNS resolver (multipli container in una sola macchina), il nuovo servizio verrà direttamente inserito all'interno sistema bare metal come servizio indipendente.
+
+Questa modifica ha come conseguenza due miglioramenti: minore consumo di memoria in una singola macchina dato da inutili copie del servizio e maggiore efficienza nel processo di aggregazione, in quanto il numero di server da interrogare è notevolmente ridotto, viene inoltre rimossa la necessità di filtrare indirizzi duplicati in quanto ogni macchina viene interrogata una volta sola.
 ## Analisi dei Risultati
 ### Testing automatico
-### Sperimentazioni
 
 ## Conclusioni
 ### Lavori futuri
-
-## Bibliografia
