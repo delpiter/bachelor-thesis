@@ -15,22 +15,22 @@ mostrando un miglioramento dell'affidabilità del servizio e una riduzione dell'
 di memoria sui server di dispiegamento. Il lavoro ha incluso inoltre la progettazione 
 di un'interfaccia utente modernizzata per il nuovo applicativo.
 ## Introduzione
+Il presente documento descrive le attività svolte durante il periodo di tirocinio aziendale presso FlashStart, sotto la supervisione del Prof. Mirko Viroli, i Tutor Aziendali Francesco Collini e Stefano Babini.
+
 FlashStart è una azienda che da oltre 20 anni protegge gli utenti nel mondo digitale con soluzioni di sicurezza informatica attraverso il filtraggio dei contenuti basato su DNS e intelligenza artificiale.
 L'azienda fornisce filtraggio dei contenuti per utenti singoli o organizzazioni di ogni dimensione.
-FlashStart opera su una rete Anycast globale composta da più di 160 nodi distribuiti strategicamente in tutti i continenti, progettata per garantire elevata disponibilità, latenza minima e continuità operativa anche in caso di interruzioni o picchi di traffico.
+FlashStart opera su una rete anycast globale (aggiungi definizione) composta da più di 160 nodi distribuiti strategicamente in tutti i continenti, progettata per garantire elevata disponibilità, latenza minima e continuità operativa anche in caso di interruzioni o picchi di traffico.
 
 A partire dal 2026 FlashStart ha iniziato il più grande redesign dell'azienda, spostandosi da una applicazione con architettura monolitica ad un applicativo moderno con una architettura basata su microservizi altamente scalabili.
 In questo documento si farà riferimento ai due applicativi come: ***FlashStart Cloud***, il sistema attualmente in uso ma destinato alla dismissione, e ***FlashStart Internet Protection 2026***, la soluzione individuata per la sua sostituzione.
 
 Nel seguito della trattazione, per semplicità, si farà riferimento al nuovo sistema come *FlashStart 2026 (FS26)*.
 
-## Background
 Lo strumento di controllo latenza è uno strumento fondamentale per il Network Admin in quanto consente di calcolare a priori la latenza di risposta del DNS (in millisecondi) che l’utilizzatore avrà utilizzando il servizio di protezione della navigazione.
 
 Essendo la protezione FlashStart "at DNS level", una bassa latenza (tipicamente inferiore ai 10ms) è essenziale per garantire sicurezza e fluidità della navigazione in Internet allo stesso tempo.
 
 Nello strumento vengono anche stimati gli eventuali nodi alternativi in caso di problematiche (outage) del nodo preferenziale (best latency path). Essendo la rete basata su BGP Anycast, gli indirizzi IP del servizio di DNS sicuro sono presenti (annunciati) in ogni datacenter ed in caso di criticità del nodo principale, automaticamente l’utilizzatore continuerà a navigare filtrato e protetto su un nodo alternativo, con una latenza leggermente superiore.
-
 ```bibtex
 // bgp
 @techreport{rfc4271,
@@ -79,11 +79,30 @@ Nello strumento vengono anche stimati gli eventuali nodi alternativi in caso di 
 }
 ```
 
+> Struttura dei Capitoli
+
+Il capitolo due introduce i concetti di background necessari alla comprensione del progetto: viene fatta una descrizione dettagliata dell'architettura del servizio e di ciascun suo componente tra cui: l'upstream orchestrator, il downstream e il punto di ingresso con *FlashStart Cloud*.
+Per ogni sezione del servizio vengono spiegate le fragilità e i problemi da risolvere.
+
+Nel capitolo tre vengono analizzati gli obbiettivi e i requisiti del progetto per ciascun componente del progetto.
+
+All'interno del capitolo quattro vengono descritte le scelte di design prese per rispettare i vincoli imposti nel capitolo precedente nello sviluppo delle varie componenti del servizio.
+
+Nel capitolo cinque viene motivata la scelta dei vari linguaggi utilizzati per le implementazioni e mostrata in dettaglio l'implementazione delle varie componenti del servizio.
+
+Nel capitolo sei sono descritte le decisioni prese per il dispiegamento delle varie nuove componenti del servizio.
+
+Nel capitolo sette si presentano i test sperimentali condotti per validare i vari componenti.
+
+Nel capitolo otto ci sono le conclusioni.
+[TODO, improve]
+## Background
+
 ### Architettura legacy del servizio
 
 Il servizio latency si compone di tre servizi separati:
-- Un upstream orchestrator
-- Diversi downstream, uno per ciascuno dei servizi di DNS resolver all'interno dei 160+ server della rete anycast.
+- Un upstream orchestrator, servizio localizzato all'interno del server principale. Questa componente del servizio ha il compito di recuperare la lista dei server attivi da interrogare per la latenza, aggregare e riordinare i risultati ottenuti.
+- Diversi downstream, uno per ciascuno dei servizi di DNS resolver all'interno dei 160+ server della rete anycast. Utilizzato per richiedere il tempo di latenza tra il server e una macchina specificata in una qualsiasi posizione nel mondo.
 - La route `php` utilizzata da *FlashStart Cloud*.
 
 #### Upstream Orchestrator
@@ -141,23 +160,21 @@ L'oggetto finale che viene restituito al client è il seguente:
 In questo capitolo vengono evidenziati i requisiti del progetto, analizzando i limiti imposti dalla quantità di risorse a disposizione da ciascun server all'interno della rete.
 ### Obbiettivi
 L'obbiettivo di questo progetto è quello di riscrivere un servizio di monitoraggio della latenza, partendo da un codice monolitico scritto in php e python.
-La riscrittura coinvolge 3 sezioni distinte:
-- Servizio downstream
-    - Servizio localizzato all'interno di ciascuno dei server remoti nella rete utilizzato per richiedere il tempo di latenza tra il server e una macchina specifica in una qualsiasi location nel mondo.  
-- Servizio upstream
-    - Servizio localizzato all'interno del server principale, questo servizio ha il compito di recuperare la lista dei server attivi da interrogare per la latenza, aggregare e riordinare i risultati ottenuti.
+La riscrittura coinvolge le tre sezioni indicate in precedenza.
 
-Per questi due progetti gli obbiettivi sono i seguenti:
+Per le componenti di upstream e downstream gli obbiettivi sono i seguenti:
 - Eliminazione dei colli di bottiglia: Sostituzione dei processi di sistema shell-based con esecuzione controllata e concurrent fan-out.
 - Scalabilità orizzontale: Standardizzazione dei container Docker light-weight e orchestrazione con Docker-Compose per ambienti di test e produzione.
 - Garanzia di compatibilità (Golden Testing): Mantenimento rigoroso dei contratti API REST sia per i client dashboard sia per i servizi downstream/upstream legati all'infrastruttura MySQL e PostgreSQL.
 
-- Integrazione del servizio con *FlashStart 2026*. 
-    - In questa sezione dovranno essere riprogettati sia l'interfaccia grafica che la route `http` per l'esecuzione del servizio. 
+Per l'integrazione del servizio con *FlashStart 2026*. 
+- In questa componente dovranno essere riprogettati sia l'interfaccia grafica che la route `http` per l'esecuzione del servizio all'interno del nuovo applicativo.
+
 ### Limitazioni
 Per quanto riguarda i servizi di downstream e upstream le limitazioni sono le seguenti:
 - Il software deve essere il più leggero e efficiente possibile, in quanto dovrà essere dispiegato su server che devono gestire milioni di richieste giornaliere. Il software non deve assolutamente rallentare il funzionamento delle macchine fisiche.
-- Il software deve essere retrocompatibile con la versione precedente, in modo tale che possa essere utilizzato dalla dashboard legacy senza necessità di ulteriori modifiche al codice attuale.
+- Il software delle componenti di downstream e upstream deve essere retrocompatibile con la versione precedente, in modo tale che possa essere utilizzato dalla dashboard legacy senza necessità di ulteriori modifiche al codice attuale.
+
 ### Analisi dei Requisiti
 I due servizi principali sono stati progettati seguendo il pattern di programmazione MVC.
 - Devono esporre delle api ben definite (View), analizzare le richieste ricevute (Controller) e eseguire le operazioni sui dati (Model).
