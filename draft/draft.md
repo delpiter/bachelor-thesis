@@ -81,25 +81,21 @@ Nello strumento vengono anche stimati gli eventuali nodi alternativi in caso di 
 
 > Struttura dei Capitoli
 
-Il capitolo due introduce i concetti di background necessari alla comprensione del progetto: viene fatta una descrizione dettagliata dell'architettura del servizio e di ciascun suo componente tra cui: l'upstream orchestrator, il downstream e il punto di ingresso con *FlashStart Cloud*.
-Per ogni sezione del servizio vengono spiegate le fragilità e i problemi da risolvere.
+Capitolo 2 – Sfondo tecnologico e architettura: descrive nel dettaglio l'architettura del servizio e i suoi componenti chiave (upstream orchestrator, downstream e punto d'ingresso su FlashStart Cloud), evidenziandone le fragilità e le criticità da risolvere.
 
-Nel capitolo tre vengono analizzati gli obbiettivi e i requisiti del progetto per ciascun componente del progetto.
+Capitolo 3 – Requisiti ed obiettivi: definisce i vincoli funzionali e strutturali stabiliti per ciascun elemento del sistema.
 
-All'interno del capitolo quattro vengono descritte le scelte di design prese per rispettare i vincoli imposti nel capitolo precedente nello sviluppo delle varie componenti del servizio.
+Capitolo 4 – Scelte di design: illustra le decisioni architetturali e di progettazione adottate per soddisfare i requisiti individuati nel capitolo precedente.
 
-Nel capitolo cinque viene motivata la scelta dei vari linguaggi utilizzati per le implementazioni e mostrata in dettaglio l'implementazione delle varie componenti del servizio.
+Capitolo 5 – Implementazione: motiva la selezione dei linguaggi di programmazione e presenta nel dettaglio lo sviluppo delle varie componenti.
 
-Nel capitolo sei sono descritte le decisioni prese per il dispiegamento delle varie nuove componenti del servizio.
+Capitolo 6 – Deployment e integrazione: approfondisce le strategie e le decisioni operative per il dispiegamento delle nuove componenti nell'infrastruttura di rete e nel nuovo applicativo.
 
-Nel capitolo sette si presentano i test sperimentali condotti per validare i vari componenti.
+Capitolo 7 – Validazione e test: presenta le prove sperimentali condotte per verificare il corretto funzionamento dei componenti realizzati.
 
-Nel capitolo otto ci sono le conclusioni.
-[TODO, improve]
+Capitolo 8 – Conclusioni: raccoglie le considerazioni finali sui risultati ottenuti e delinea i possibili sviluppi futuri.
 ## Background
-
 ### Architettura legacy del servizio
-
 Il servizio latency si compone di tre servizi separati:
 - Un upstream orchestrator, servizio localizzato all'interno del server principale. Questa componente del servizio ha il compito di recuperare la lista dei server attivi da interrogare per la latenza, aggregare e riordinare i risultati ottenuti.
 - Diversi downstream, uno per ciascuno dei servizi di DNS resolver all'interno dei 160+ server della rete anycast. Utilizzato per richiedere il tempo di latenza tra il server e una macchina specificata in una qualsiasi posizione nel mondo.
@@ -170,14 +166,14 @@ Per le componenti di upstream e downstream gli obbiettivi sono i seguenti:
 Per l'integrazione del servizio con *FlashStart 2026*. 
 - In questa componente dovranno essere riprogettati sia l'interfaccia grafica che la route `http` per l'esecuzione del servizio all'interno del nuovo applicativo.
 
+È inoltre richiesta la scrittura della documentazione dettagliata di ciascuna delle componenti sviluppate, in modo tale da facilitare sviluppi futuri.
 ### Limitazioni
 Per quanto riguarda i servizi di downstream e upstream le limitazioni sono le seguenti:
 - Il software deve essere il più leggero e efficiente possibile, in quanto dovrà essere dispiegato su server che devono gestire milioni di richieste giornaliere. Il software non deve assolutamente rallentare il funzionamento delle macchine fisiche.
 - Il software delle componenti di downstream e upstream deve essere retrocompatibile con la versione precedente, in modo tale che possa essere utilizzato dalla dashboard legacy senza necessità di ulteriori modifiche al codice attuale.
 
 ### Analisi dei Requisiti
-I due servizi principali sono stati progettati seguendo il pattern di programmazione MVC.
-- Devono esporre delle api ben definite (View), analizzare le richieste ricevute (Controller) e eseguire le operazioni sui dati (Model).
+I due servizi principali devono essere progettati seguendo il pattern di programmazione MVC.Devono esporre delle api ben definite (View), analizzare le richieste ricevute (Controller) e eseguire le operazioni sui dati (Model).
 #### Upstream service
 Il servizio di upstream deve recuperare la lista di indirizzi ip dei server, interrogare tutti gli indirizzi e validare i valori di output.
 
@@ -383,7 +379,7 @@ Questo wrapper risolve il problema della fragilità del risultato, poiché il pa
 Il linguaggio `golang` mette a disposizione due costrutti nativi per la gestione di routine parallele: le goroutine, funzioni parallele asincrone e i canali (`chan`) strutture dati in grado di gestire automaticamente la concorrenza senza provocare race conditions.
 I canali possono anche essere visti come dei semafori nella teoria della programmazione concorrente.
 
-L'implementazione del bounded parallelism pattern si è basata da una funzione citata in un blog nel sito ufficiale di `golang` che calcola il *checksum MD5* di tutti i file in una directory specificata, riadattandola secondo le necessità del sistema in sviluppo.
+L'implementazione del bounded parallelism pattern si è basata da una funzione che calcola il *checksum MD5* di tutti i file in una directory specificata, riadattandola secondo le necessità del sistema in sviluppo.
 
 ``` bibtex
 @misc{ajmani2014pipelines,
@@ -397,9 +393,9 @@ L'implementazione del bounded parallelism pattern si è basata da una funzione c
 }
 ```
 
-Il funzionamento dell'algoritmo si basa su 3 canali:
-- Un canale che eroga uno alla volta ciascun indirizzo dei server da interrogare.
-- Un canale che colleziona i risultati.
+Il funzionamento si basa su 3 canali distinti:
+- **Canale di distribuzione degli indirizzi**: eroga uno alla volta ciascun indirizzo dei server da interrogare. Su questo canale si metteranno in ascolto i thread lavoratori.
+- **Canale di raccolta dei risultati**: eseguito dal thread principale colleziona i risultati calcolati da ciascun thread lavoratore.
 - Un canale che segnala la conclusione.
 
 Una volta inizializzati i canali viene creato l'insieme di "thread worker" che eseguiranno le richieste di latenza ai vari server.
@@ -484,4 +480,11 @@ Questa modifica ha come conseguenza due miglioramenti: minore consumo di memoria
 ### Testing automatico
 
 ## Conclusioni
+L'esperienza di tirocinio svolta ha permesso di completare con successo l'intero ciclo di vita del software per la modernizzazione dei servizi di latenza. Il passaggio dall'architettura PHP/Python al nuovo ecosistema in Go ha portato notevoli benefici prestazionali e strutturali.
+Efficienza Computazionale: Il passaggio a binari nativi compilati in contenitori Debian-Slim ha ridotto notevolmente l'utilizzo della memoria RAM rispetto al sistema basato su Apache, PHP e Python.
+Robustezza Operativa: La gestione manuale delle chiamate ping garantiscono una alta affidabilità rispetto al sistema preesistente.
+Trade-off velocità/affidabilità: L'aggiunta di diversi layer aggiuntivi rispetto all'esecuzione nativa del ping del sistema operativo riporta dei leggeri rallentamenti nell'esecuzione del ping; Rispetto all'esecuzione nativa, il nuovo applicativo riporta leggeri rallentamenti ($50-70 \mu s$).
+Questo rallentamento è però trascurabile, poiché la latenza richiede una precisione nelle misurazioni nell'ordine dei millisecondi. Inoltre questo rallentamento è visibile solo nel caso specifico che venga eseguito il ping sull'interfaccia di loop-back, una richiesta possibile ma che ha poco senso ai fini dello strumento.
+
+Documentazione: la scrittura della documentazione in parallelo con lo sviluppo del codice ha permesso una dettagliata descrizione di tutte le componenti del sistema che facilitano eventuali modifiche e aggiunte.
 ### Lavori futuri
