@@ -96,10 +96,13 @@ Capitolo 7 – Validazione e test: presenta le prove sperimentali condotte per v
 Capitolo 8 – Conclusioni: raccoglie le considerazioni finali sui risultati ottenuti e delinea i possibili sviluppi futuri.
 ## Background
 ### Architettura legacy del servizio
-Il servizio latency si compone di tre servizi separati:
-- Un upstream orchestrator, servizio localizzato all'interno del server principale. Questa componente del servizio ha il compito di recuperare la lista dei server attivi da interrogare per la latenza, aggregare e riordinare i risultati ottenuti.
-- Diversi downstream, uno per ciascuno dei servizi di DNS resolver all'interno dei 160+ server della rete anycast. Utilizzato per richiedere il tempo di latenza tra il server e una macchina specificata in una qualsiasi posizione nel mondo.
-- La route `php` utilizzata da *FlashStart Cloud*.
+Il servizio latency si compone di tre servizi separati che comunicano in sequenza attraverso chiamate http per ottenere il risultato.
+
+- **Upstream orchestrator**: componente centrale localizzato all'interno del server principale. Questa componente del servizio ha il compito di recuperare la lista dei server attivi da interrogare per la latenza, aggregare e riordinare i risultati ottenuti. 
+
+- **Downstream**: Utilizzato per richiedere il tempo di latenza tra il server e una macchina specificata. Questa componente è dispiegata in ciascuno dei DNS resolver all'interno dei 160+ server della rete anycast.
+
+- **La route `php`**: utilizzata da *FlashStart Cloud* per invocare il servizio ed esporre i dati raccolti.
 
 #### Upstream Orchestrator
 L'upstream orchestrator non è altro che un servizio dispiegato all'interno di ciascun DNS resolver.
@@ -156,32 +159,33 @@ L'oggetto finale che viene restituito al client è il seguente:
 In questo capitolo vengono evidenziati i requisiti del progetto, analizzando i limiti imposti dalla quantità di risorse a disposizione da ciascun server all'interno della rete.
 ### Obbiettivi
 L'obbiettivo di questo progetto è quello di riscrivere un servizio di monitoraggio della latenza, partendo da un codice monolitico scritto in php e python.
-La riscrittura coinvolge le tre sezioni indicate in precedenza.
+La struttura di comunicazione deve rimanere quella attuale mantenendo le tre componenti descritte in precedenza.
 
 Per le componenti di upstream e downstream gli obbiettivi sono i seguenti:
-- Eliminazione dei colli di bottiglia: Sostituzione dei processi di sistema shell-based con esecuzione controllata e concurrent fan-out.
-- Scalabilità orizzontale: Standardizzazione dei container Docker light-weight e orchestrazione con Docker-Compose per ambienti di test e produzione.
-- Garanzia di compatibilità (Golden Testing): Mantenimento rigoroso dei contratti API REST sia per i client dashboard sia per i servizi downstream/upstream legati all'infrastruttura MySQL e PostgreSQL.
+- **Eliminazione dei colli di bottiglia**: sostituzione dei processi di sistema shell-based con esecuzione controllata e concurrent fan-out*.
 
-Per l'integrazione del servizio con *FlashStart 2026*. 
-- In questa componente dovranno essere riprogettati sia l'interfaccia grafica che la route `http` per l'esecuzione del servizio all'interno del nuovo applicativo.
+- **Scalabilità orizzontale**: Standardizzazione dei container Docker light-weight e orchestrazione con Docker-Compose per ambienti di test e produzione.
+
+- **Garanzia di compatibilità**: Mantenimento rigoroso dei contratti API REST sia per i client dashboard sia per i servizi downstream/upstream legati all'infrastruttura MySQL e PostgreSQL.
+
+Per l'integrazione del servizio con *FlashStart 2026* dovranno essere riprogettati sia l'interfaccia grafica che la route `http` per l'esecuzione del servizio all'interno del nuovo applicativo.
 
 È inoltre richiesta la scrittura della documentazione dettagliata di ciascuna delle componenti sviluppate, in modo tale da facilitare sviluppi futuri.
 ### Limitazioni
 Per quanto riguarda i servizi di downstream e upstream le limitazioni sono le seguenti:
-- Il software deve essere il più leggero e efficiente possibile, in quanto dovrà essere dispiegato su server che devono gestire milioni di richieste giornaliere. Il software non deve assolutamente rallentare il funzionamento delle macchine fisiche.
-- Il software delle componenti di downstream e upstream deve essere retrocompatibile con la versione precedente, in modo tale che possa essere utilizzato dalla dashboard legacy senza necessità di ulteriori modifiche al codice attuale.
+- **Efficienza**: il software deve essere il più leggero e efficiente possibile, in quanto dovrà essere dispiegato su server che devono gestire milioni di richieste giornaliere. Il software non deve rallentare il funzionamento delle macchine fisiche.
+- **Retrocompatibilità**: il software delle componenti di downstream e upstream deve essere retrocompatibile con la versione precedente, in modo tale che possa essere utilizzato dalla dashboard legacy senza necessità di ulteriori modifiche al codice attuale.
 
 ### Analisi dei Requisiti
 I due servizi principali devono essere progettati seguendo il pattern di programmazione MVC.Devono esporre delle api ben definite (View), analizzare le richieste ricevute (Controller) e eseguire le operazioni sui dati (Model).
-#### Upstream service
+#### Upstream aggregator
 Il servizio di upstream deve recuperare la lista di indirizzi ip dei server, interrogare tutti gli indirizzi e validare i valori di output.
 
 Questo servizio deve esporre due interfacce API:
 - `GET api/latency/{network}`: interfaccia utilizzata da altri servizi all'interno di *FlashStart Cloud*, non strettamente necessaria per la modernizzazione del servizio, ma mantenuta per la retrocompatibilità.
 - `GET api/latency/cloud/{network}`: interfaccia utilizzata direttamente dal servizio di latency.
 
-Il parametro del percorso `{network}` deve essere un indirizzo ip valido che corrisponde all'indirizzo della macchina su cui devono essere calcolati i tempi di risposta dei vari server.
+Il parametro del percorso `{network}` deve essere un indirizzo ip valido (sia ipv4 che ipv6) che corrisponde all'indirizzo della macchina su cui devono essere calcolati i tempi di risposta dei vari server.
 
 La risposta ottenuta dalle due interfacce deve essere omogenea e deve inoltre corrispondere con la struttura originale del messaggio per mantenere la retrocompatibilità.
 ```json
@@ -206,14 +210,14 @@ Il fallimento della richiesta o il superamento di una deadline pre-impostata com
 > Aggregazione dei valori
 
 In questa sezione deve essere validato ciascun indirizzo ip ottenuto in precedenza.
-Per ogni host valido veerrà interrogato il server server downstream corrispondente per ottenere il relativo valore della latenza rispetto all'indirizzo fornito dall'utente.
+Per ogni host valido verrà interrogato il server server downstream corrispondente per ottenere il relativo valore della latenza rispetto all'indirizzo fornito dall'utente.
 Ogni richiesta deve essere trattata in maniera indipendente dalle altre: il fallimento di una richiesta non deve compromettere l'intera aggregazione.
 Una volta ottenuti, i risultati devono essere normalizzati per aderire al modello di risposta analizzato in precedenza.
-- Se una richiesta fallisce, impiega troppo tempo o ritorna un codice http diverso da `2xx`, deve essere assegnato il valore `-1` alla richiesta di quel server.
+Se una richiesta fallisce, impiega troppo tempo o ritorna un codice http diverso da `2xx`, deve essere assegnato il valore `-1` alla richiesta di quel server.
 
 Infine la lista di valori deve essere ordinata in ordine ascendente secondo il valore della latenza.
 
-#### Downstream service
+#### Downstream
 Il servizio di downstream deve esporre una unica interfacca API.
 `GET /api/latency`.
 Una richiesta valida deve contenere un parametro `network` nella richiesta `http` e come valore deve essere presente un indirizzo ip valido tra ipv4 e ipv6.
@@ -225,12 +229,12 @@ La richiesta dovrà ritornare un semplice valore numerico che rappresenta il tem
 - In caso non venga attivato, la richiesta deve fallire (`host unreachable`).
 
 Una volta validato l'indirizzo viene eseguito il ping della macchina specificata, questo passaggio deve essere indipendente dal tipo di versione dell'indirizzo che è stato ricevuto.
-- Questa operazione ha delle deadline strette per evitare di consumare troppe risorse; La deadline deve essere derivato dal numero di pacchetti `ICMP` inviati più un piccolo buffer fisso.
+Questa operazione ha delle deadline strette per evitare di consumare troppe risorse. La deadline deve essere derivata dal numero di pacchetti `ICMP` inviati più un piccolo buffer fisso.
 
 Se in un qualsiasi momento accade un errore, la richiesta non deve fallire, invece si deve attivare un meccanismo di fallback e ritornare un valore di default (`-1`).
 
 Infine deve essere fatta la validazione del risultato ottenuto dall'esecuzione del ping.
-- Se la perdita di pacchetti blocca il calcolo del tempo di risposta medio, la richiesta deve tornare `-1`.
+- Se la perdita di pacchetti (packet loss $> 50$ %) blocca il calcolo del tempo di risposta medio, la richiesta deve tornare `-1`.
 
 #### Integrazione con FlashStart 2026
 L'integrazione con *FlashStart 2026* serve per permettere al frontend dell'applicazione di mostrare i dati ottenuti.
@@ -262,9 +266,9 @@ Le operazioni specifiche ad una versione del protocollo `ip` verranno delegate a
 ### Upstream Service
 Il numero di server da interrogare potrebbe aumentare notevolmente nel tempo; Eseguire le chiamate in sequenza non è possibile, in quanto con un numero elevato di interrogazioni da condurre l'esecuzione verrebbe sicuramente interrotta dal timeout imposto.
 È necessario quindi eseguire le chiamate in parallelo.
-L'operazione è di tipo *embarassingly parallel* in quanto ogni singola esecuzione è indipendente dalle altre, sarebbe dunque facilmente parallelizzabile assegnando un thread a ciascuna richiesta da fare.
-Questo però andrebbe a consumare una elevata quantità di risorse, e ciò violerebbe il vincolo posto in precedenza (capitolo analisi).
-È stato scelto di limitare il numero di thread lavoratori sfruttando il _bounded parallelism pattern_.
+L'operazione è di tipo *embarassingly parallel* in quanto ogni singola esecuzione è indipendente dalle altre.
+Senza dare alcuna limitazione il sistema potrebbe consumare una elevata quantità di risorse in quanto il numero di server da interrogare potrebbe aumentare notevolmente. Ciò violerebbe il vincolo posto in precedenza (capitolo analisi).
+È stato scelto di limitare il numero di unità di esecuzione sfruttando il _bounded concurrency pattern_, che attraverso un meccanismo di semafori, la concorrenza massima viene regolata per evitare il degrado della rete e limitare l'utilizzo eccessivo di risorse della macchina.
 
 ### Gestione dei middleware
 A seguito di una richista http potrebbe essere necessario eseguire multiple funzioni con scopo diverso.
@@ -375,11 +379,11 @@ Quest'ultima feature permette una potenziale futura espansione del servizio attu
 
 Questo wrapper risolve il problema della fragilità del risultato, poiché il parsing del risultato non viene più fatto in base all'output di un comando di una bash. Il risultato finale viene calcolato sulla base dei risultati di ogni pacchetto che vengono salvati in locale.
 
-#### Bounded Parallelism
-Il linguaggio `golang` mette a disposizione due costrutti nativi per la gestione di routine parallele: le goroutine, funzioni parallele asincrone e i canali (`chan`) strutture dati in grado di gestire automaticamente la concorrenza senza provocare race conditions.
+#### Bounded Concurrency
+Il linguaggio `golang` mette a disposizione due costrutti nativi per la gestione di routine concorrenti: le goroutine e i canali (`chan`) strutture dati in grado di gestire automaticamente la concorrenza senza provocare race conditions.
 I canali possono anche essere visti come dei semafori nella teoria della programmazione concorrente.
 
-L'implementazione del bounded parallelism pattern si è basata da una funzione che calcola il *checksum MD5* di tutti i file in una directory specificata, riadattandola secondo le necessità del sistema in sviluppo.
+L'implementazione del bounded concurrency pattern si è basata da una funzione che calcola il *checksum MD5* di tutti i file in una directory specificata, riadattandola secondo le necessità del sistema in sviluppo.
 
 ``` bibtex
 @misc{ajmani2014pipelines,
@@ -389,17 +393,17 @@ L'implementazione del bounded parallelism pattern si è basata da una funzione c
   year         = {2014},
   month        = {March},
   url          = {https://go.dev/blog/pipelines},
-  note         = {Licensed under CC BY 4.0. Accessed: \today}
+  note         = {Licensed under CC BY 4.0.}
 }
 ```
 
 Il funzionamento si basa su 3 canali distinti:
-- **Canale di distribuzione degli indirizzi**: eroga uno alla volta ciascun indirizzo dei server da interrogare. Su questo canale si metteranno in ascolto i thread lavoratori.
+- **Canale di distribuzione degli indirizzi**: eroga uno alla volta ciascun indirizzo dei server da interrogare. Su questo canale si metteranno in ascolto i lavoratori.
 - **Canale di raccolta dei risultati**: eseguito dal thread principale colleziona i risultati calcolati da ciascun thread lavoratore.
 - Un canale che segnala la conclusione.
 
-Una volta inizializzati i canali viene creato l'insieme di "thread worker" che eseguiranno le richieste di latenza ai vari server.
-A ciascun worker vengono condivisi i tre canali creati, quando riceve un nuovo indirizzo IP dal canale, esegue la chiamata, ritorna il valore di latenza e si rimette in ascolto per il prossimo indirizzo.
+Una volta inizializzati i canali viene creato l'insieme di lavoratori che eseguiranno le richieste di latenza ai vari server.
+A ciascun worker vengono condivisi i tre canali creati, quando riceve un nuovo indirizzo IP dal canale di distribuzione, esegue la chiamata, ritorna il valore di latenza e si rimette in ascolto per il prossimo indirizzo.
 
 ``` go
 func serverListWalk(
@@ -442,6 +446,23 @@ func worker(
 	}
 }
 ```
+
+Questo permette una effettiva parallelismo a runtime solamente se il sistema sottostante ha una `CPU` multicore e se la variabile `GOMAXPROCS` lo permette.
+- `GOMAXPROCS` è la variabile che indica il numero massimo di thread che si possono usare per eseguire goroutines in parallelo.
+
+Dalla versione 1.24 in poi la variabile assume di default il numero totale di CPU cores nella macchina.
+``` bibtex
+@misc{ajmani2014pipelines,
+  author       = {Michael Pratt, Carlos Amedee},
+  title        = {Container-aware GOMAXPROCS},
+  howpublished = {The Go Blog},
+  year         = {2025},
+  month        = {August},
+  url          = {https://go.dev/blog/container-aware-gomaxprocs},
+  note         = {Licensed under CC BY 4.0.}
+}
+```
+
 #### Integrazione con FlashStart 2026
 Per lo sviluppo del frontend è stato coinvolto un esperto di user experience in modo tale da mantenere un'alto standard di usabilità e coerenza di stile con il resto dell'applicativo.
 La progettazione è partita dal design della vechia pagina, la nuova doveva riproporre le stesse feature in maniera più chiara e pulita.
@@ -488,3 +509,4 @@ Questo rallentamento è però trascurabile, poiché la latenza richiede una prec
 
 Documentazione: la scrittura della documentazione in parallelo con lo sviluppo del codice ha permesso una dettagliata descrizione di tutte le componenti del sistema che facilitano eventuali modifiche e aggiunte.
 ### Lavori futuri
+Traceroute
