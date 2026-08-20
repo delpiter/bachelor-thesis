@@ -498,7 +498,59 @@ A differenza del vecciho downstream, dispiegato su ciascun DNS resolver (multipl
 
 Questa modifica ha come conseguenza due miglioramenti: minore consumo di memoria in una singola macchina dato da inutili copie del servizio e maggiore efficienza nel processo di aggregazione, in quanto il numero di server da interrogare è notevolmente ridotto, viene inoltre rimossa la necessità di filtrare indirizzi duplicati in quanto ogni macchina viene interrogata una volta sola.
 ## Analisi dei Risultati
-### Testing automatico
+Durante l'intero sviluppo del servizio è stata applicata la metodologia del Test Driven Development (TDD), in conformità a un requisito stabilito dall'azienda durante il percorso di tirocinio.
+Per ciascuna componente del servizio sono stati creati diversi casi di test basandosi sulle specifiche dettate in fase di analisi.
+
+### Tesing in Go
+Per le componenti di upstream e downstream è stato privilegiando l'utilizzo degli strumenti nativi del linguaggio Go per il testing automatico (package testing della standard library), in linea con le convenzioni idiomatiche del linguaggio e senza la necessità di introdurre dipendenze esterne aggiuntive.
+
+La suite di test è stata progettata per coprire le principali cause di errore individuate in fase di analisi, con l'obiettivo di intercettare tempestivamente malfunzionamenti che potrebbero compromettere la stabilità dei servizi in produzione. Nello specifico, sono state individuate tre aree critiche su cui concentrare lo sforzo di testing:
+
+#### Caricamento della configurazione
+Sia il servizio di upstream che quello di downstream necessitano, in fase di avvio, del caricamento di un insieme di variabili d'ambiente indispensabili per il corretto funzionamento del sistema (ad esempio parametri di connessione, endpoint, credenziali o soglie operative). Sono stati quindi implementati test volti a verificare che:
+
+- in presenza di tutte le variabili richieste con valori validi, il servizio si avvii correttamente e le configurazioni vengano caricate secondo quanto atteso;
+- in caso di assenza di una o più variabili obbligatorie, l'esecuzione del servizio venga interrotta in modo controllato, restituendo un messaggio di errore esplicativo;
+- in caso di valori inconsistenti o non validi (ad esempio formati errati, valori fuori range o tipi di dato non compatibili), il servizio rilevi l'anomalia e blocchi l'avvio, evitando che possa proseguire in uno stato potenzialmente instabile o non affidabile.
+
+Questo approccio fail-fast garantisce che eventuali errori di configurazione vengano individuati immediatamente all'avvio del servizio, piuttosto che manifestarsi in modo imprevedibile durante l'esecuzione in produzione.
+
+#### Funzioni principali
+Sono stati inoltre realizzati test dedicati alle funzioni core di ciascun servizio, tra cui in particolare:
+
+- **Ping**: funzione responsabile della richiesta di connessione alla rete, testata per verificarne il corretto comportamento sia in condizioni di successo che in scenari di fallimento della connessione (ad esempio timeout o rete non raggiungibile).
+- **Aggregatore**: componente incaricata dell'elaborazione e aggregazione dei dati, per la quale sono stati definiti test volti a validare la correttezza dei risultati prodotti a fronte di diversi set di dati in input.
+
+#### Route HTTP
+Per la validazione delle route HTTP esposte dai due servizi è stato utilizzato il package net/http/httptest, appartenente alla standard library di Go, che consente di simulare richieste HTTP senza la necessità di avviare un server reale e in ascolto su una porta di rete. Attraverso questo strumento sono state simulate le chiamate GET verso gli endpoint esposti da upstream e downstream, permettendo di verificare:
+
+- la correttezza dei codici di stato HTTP restituiti nelle diverse casistiche (successo, errore, risorsa non trovata, ecc.);
+- la corretta struttura e il contenuto del payload di risposta;
+- il corretto comportamento del servizio a fronte di richieste malformate o parametri mancanti.
+
+L'utilizzo di httptest ha permesso di eseguire i test in modo rapido e isolato, senza dipendenze dall'infrastruttura di rete reale, garantendo al contempo un elevato grado di realismo nella simulazione delle interazioni HTTP.
+
+### Unit e integration test
+Al fine di garantire l'affidabilità e la correttezza del nuovo microservizio introdotto nel sistema, è stata predisposta una strategia di testing articolata su due livelli complementari: unit test e integration test.
+
+Gli unit test sono stati progettati per verificare il corretto funzionamento delle singole componenti in isolamento, escludendo dipendenze esterne e concentrandosi esclusivamente sulla logica interna di ciascuna funzione o modulo.
+
+Gli integration test, invece, sono stati concepiti per validare il corretto funzionamento del nuovo microservizio *FlashStart 2026* nel contesto più ampio dell'applicativo, verificando che le interazioni tra i vari componenti del sistema (in particolare tra il microservizio stesso e i servizi preesistenti) avvengano correttamente e producano i risultati attesi. Questo livello di test si è rivelato particolarmente rilevante per intercettare problematiche non emerse durante il testing isolato delle singole unità, come incompatibilità nei formati di scambio dati, errori nella gestione delle chiamate asincrone o comportamenti inattesi derivanti da configurazioni condivise tra i moduli.
+
+#### Strumenti e librerie utilizzate
+
+Per l'implementazione della suite di test automatizzati sono state adottate le seguenti librerie, ampiamente diffuse nell'ecosistema JavaScript/Node.js:
+- **Mocha**: framework di testing utilizzato come motore di esecuzione dei test, responsabile dell'organizzazione dei casi di test in suite (describe) e singoli test (it), nonché della generazione dei relativi report di esecuzione.
+- **Chai**: libreria di assertion utilizzata per la verifica dei valori attesi rispetto ai risultati effettivamente prodotti dal codice sotto test. La sintassi BDD-style (expect/should) ha permesso di scrivere asserzioni chiare e leggibili, migliorando la manutenibilità dei test stessi.
+- **Sinon**: strumento di mocking e stubbing utilizzato per isolare le componenti sotto test dalle loro dipendenze esterne, in particolare per simulare chiamate a servizi esterni, database o API di terze parti, evitando così effetti collaterali indesiderati durante l'esecuzione dei test e garantendo la ripetibilità dei risultati.
+
+#### Funzioni di seeding
+Per garantire condizioni di test consistenti e riproducibili, sono state implementate apposite funzioni di seeding, incaricate di popolare l'ambiente di test con un insieme predefinito di dati fittizi ma realistici prima dell'esecuzione delle suite di test. 
+
+L'adozione di queste funzioni ha permesso di:
+- eliminare dipendenze da stati residui di esecuzioni precedenti, garantendo l'isolamento tra i test;
+- disporre di un dataset noto e controllato su cui validare in modo deterministico i risultati attesi;
+- ridurre il tempo necessario per la preparazione manuale dei dati di test, automatizzando la fase di setup dell'ambiente.
 
 ## Conclusioni
 L'esperienza di tirocinio svolta ha permesso di completare con successo l'intero ciclo di vita del software per la modernizzazione dei servizi di latenza. Il passaggio dall'architettura PHP/Python al nuovo ecosistema in Go ha portato notevoli benefici prestazionali e strutturali.
