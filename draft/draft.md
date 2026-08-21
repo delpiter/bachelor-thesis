@@ -325,7 +325,6 @@ func (con *EchoConnection) SendEchoWithTTL(content string, ttl int) (*EchoRespon
 	// Build ICMP echo request
 	msg := icmp.Message{
 		Type: con.ipVersionStrategy.GetIcmpEchoType(),
-		Code: 0,
 		Body: &icmp.Echo{
 			ID:   requestID,
 			Seq:  con.sequenceNumber,
@@ -340,11 +339,8 @@ func (con *EchoConnection) SendEchoWithTTL(content string, ttl int) (*EchoRespon
 
     // sends the message and waits its answer
 	start := time.Now()
-	if _, err := con.connection.WriteTo(b, con.address); err != nil {
-		err = errors.New("Connection unavailable")
-		slog.Error(err.Error())
-		return nil, err
-	}
+    err := con.connection.WriteTo(b, con.address)
+	// ... error check
 
 	// Wait for a reply
 	con.connection.SetReadDeadline(time.Now().Add(timeout))
@@ -359,15 +355,16 @@ func (con *EchoConnection) SendEchoWithTTL(content string, ttl int) (*EchoRespon
 		// Parse the ICMP reply
 		parsedReply, err := icmp.ParseMessage(reply)
 		// ... error check
-		responseType := con.ipVersionStrategy.CheckResponseType(parsedReply.Type)
+
+        responseType := con.ipVersionStrategy.CheckResponseType(parsedReply.Type)
 		// If its not the package sent before, continue listening
-		// fmt.Printf("Response: %s from addr: %s\n", parsedReply.Type, peer.String())
 		switch responseType {
 		case networkstrategy.ICMPEchoReply:
-            // handle echo reply
+            // handle echo reply (check package id)
 		case networkstrategy.ICMPTimeExceeded:
             // handle time exceeded error
 		default:
+            // handle unexpected package (different id)
 		}
 
 		response := NewEchoResponse(/* response data */)
@@ -502,7 +499,7 @@ Durante l'intero sviluppo del servizio è stata applicata la metodologia del Tes
 Per ciascuna componente del servizio sono stati creati diversi casi di test basandosi sulle specifiche dettate in fase di analisi.
 
 ### Tesing in Go
-Per le componenti di upstream e downstream è stato privilegiando l'utilizzo degli strumenti nativi del linguaggio Go per il testing automatico (package testing della standard library), in linea con le convenzioni idiomatiche del linguaggio e senza la necessità di introdurre dipendenze esterne aggiuntive.
+Per le componenti di upstream e downstream è stato privilegiato l'utilizzo degli strumenti nativi del linguaggio Go per il testing automatico (package testing della standard library), in linea con le convenzioni idiomatiche del linguaggio e senza la necessità di introdurre dipendenze esterne aggiuntive.
 
 La suite di test è stata progettata per coprire le principali cause di errore individuate in fase di analisi, con l'obiettivo di intercettare tempestivamente malfunzionamenti che potrebbero compromettere la stabilità dei servizi in produzione. Nello specifico, sono state individuate tre aree critiche su cui concentrare lo sforzo di testing:
 
@@ -554,11 +551,23 @@ L'adozione di queste funzioni ha permesso di:
 
 ## Conclusioni
 L'esperienza di tirocinio svolta ha permesso di completare con successo l'intero ciclo di vita del software per la modernizzazione dei servizi di latenza. Il passaggio dall'architettura PHP/Python al nuovo ecosistema in Go ha portato notevoli benefici prestazionali e strutturali.
-Efficienza Computazionale: Il passaggio a binari nativi compilati in contenitori Debian-Slim ha ridotto notevolmente l'utilizzo della memoria RAM rispetto al sistema basato su Apache, PHP e Python.
-Robustezza Operativa: La gestione manuale delle chiamate ping garantiscono una alta affidabilità rispetto al sistema preesistente.
-Trade-off velocità/affidabilità: L'aggiunta di diversi layer aggiuntivi rispetto all'esecuzione nativa del ping del sistema operativo riporta dei leggeri rallentamenti nell'esecuzione del ping; Rispetto all'esecuzione nativa, il nuovo applicativo riporta leggeri rallentamenti ($50-70 \mu s$).
-Questo rallentamento è però trascurabile, poiché la latenza richiede una precisione nelle misurazioni nell'ordine dei millisecondi. Inoltre questo rallentamento è visibile solo nel caso specifico che venga eseguito il ping sull'interfaccia di loop-back, una richiesta possibile ma che ha poco senso ai fini dello strumento.
 
-Documentazione: la scrittura della documentazione in parallelo con lo sviluppo del codice ha permesso una dettagliata descrizione di tutte le componenti del sistema che facilitano eventuali modifiche e aggiunte.
+- **Efficienza Computazionale**: Il passaggio a binari nativi compilati in contenitori Debian-Slim ha ridotto notevolmente l'utilizzo della memoria RAM rispetto al sistema basato su Apache, PHP e Python.
+- **Documentazione**: la scrittura della documentazione in parallelo con lo sviluppo del codice ha permesso una dettagliata descrizione di tutte le componenti del sistema che facilitano eventuali modifiche, fix e aggiunte future.
+- **Robustezza Operativa**: La gestione manuale delle chiamate ping garantiscono una alta affidabilità rispetto al sistema preesistente.
+- **Trade-off velocità/affidabilità**: L'aggiunta di diversi layer aggiuntivi rispetto all'esecuzione nativa del ping dal sistema operativo riporta dei leggeri rallentamenti (circa $50-70 \mu s$).
+
+Questo rallentamento è però trascurabile, poiché la latenza richiede una precisione delle misurazioni nell'ordine dei millisecondi. Inoltre il rallentamento è visibile solo nel caso specifico dell'esecuzione del ping sull'interfaccia di loop-back, una richiesta possibile ma che ha poco senso ai fini dell'obbiettivo dello strumento.
 ### Lavori futuri
-Traceroute
+
+Sebbene l'obiettivo principale del progetto fosse la migrazione del servizio esistente verso la nuova infrastruttura, nel corso dello sviluppo sono emerse alcune opportunità di estensione che meritano di essere documentate in vista di sviluppi futuri. In particolare, è stata individuata la possibilità di introdurre una nuova funzionalità di diagnostica di rete, descritta di seguito.
+
+#### Traceroute
+
+Una delle feature individuate come possibile estensione futura riguarda l'implementazione di un meccanismo di **traceroute** applicativo, pensato per tracciare il percorso di rete attraversato dalle richieste dell'utente.
+
+L'idea alla base consiste nell'aggiungere, per ciascun componente del servizio, una nuova route dedicata che esponga informazioni sul cammino di rete percorso da una richiesta, in modo analogo a quanto avviene con il comando `traceroute` a livello di sistema operativo. Questo permetterebbe di ottenere una visione più granulare della topologia applicativa, utile sia in fase di debug che di monitoraggio delle latenze introdotte dai singoli nodi attraversati.
+
+Un aspetto rilevante, emerso proprio grazie al lavoro di migrazione svolto, è che il sistema attuale è stato progettato secondo criteri di modularità ed estendibilità. Questo si traduce in un vantaggio concreto per l'implementazione della feature: l'introduzione del traceroute sul server di downstream non richiederebbe una riprogettazione del sistema, ma si limiterebbe all'aggiunta di una nuova classe che sfrutta il wrapper ICMP già progettato e integrato nell'architettura esistente. In altre parole, l'infrastruttura di base necessaria — ovvero la componente in grado di gestire e interpretare i pacchetti ICMP — è già disponibile, e il lavoro richiesto si ridurrebbe principalmente all'esposizione di questa funzionalità tramite la nuova route, senza impattare in modo significativo sul resto del sistema.
+
+Questa caratteristica conferma la bontà delle scelte architetturali adottate durante la fase di migrazione, che hanno privilegiato un disaccoppiamento chiaro tra i vari livelli del servizio, rendendo agevole l'aggiunta di nuove funzionalità anche in un secondo momento, senza dover intervenire pesantemente sul codice preesistente.
