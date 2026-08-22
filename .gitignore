@@ -303,3 +303,4 @@ TSWLatexianTemp*
 *.pdf
 
 !Ping.log
+!figures/*.pdf
