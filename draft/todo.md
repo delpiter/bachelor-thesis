@@ -1,0 +1,3 @@
+- Information flow diagram
+- Anycast network definition
+- fanout definition
