@@ -9,7 +9,7 @@ architecture-beta
     service ds2(server)[Downstream 2] in fw1
     service ds3(server)[Downstream 3] in fw2
 
-    fscloud:R --> L:server
-    server:R --> L:ds2
-    server:R --> L:ds1
-    server:R --> L:ds3
+    fscloud:T -- B:server
+    server:R -- L:ds1
+    server:R -- L:ds3
+    server:R -- L:ds2
