@@ -2,6 +2,140 @@
 \label{chapter:analysis}
 In questo capitolo vengono evidenziati i requisiti del progetto, analizzando i limiti imposti dalla quantità di risorse a disposizione da ciascun server all'interno della rete.
 
-\section{Obbiettivi}
-L'obbiettivo del progetto è quello di riscrivere il servizio di diagnostica della latenza, partendo da un codice monolitico scritto in php e python.
-La struttura di comunicazione deve rimanere quella attuale mantenendo le tre componenti descritte in precedenza.
+\section{Obiettivi}
+\label{sec:obiettivi}
+
+L'obiettivo del presente lavoro di tesi consiste nella modernizzazione architetturale e sul re-engineering ad alte prestazioni dei servizi di misurazione della latenza di rete, il cui sistema originario è costituito da un'architettura monolitica sviluppata in linguaggio PHP e Python.
+Tale intervento si propone di superare i limiti strutturali dell'implementazione esistente, preservando al contempo l'architettura di comunicazione attualmente in uso, articolata nelle tre componenti descritte nel Capitolo~\ref{chap:background}.
+Il progetto prevede inoltre la redazione di una documentazione tecnica dettagliata per ciascuna delle componenti sviluppate, con l'obiettivo di agevolare la manutenzione del sistema e di facilitare eventuali sviluppi futuri.
+
+\subsection{Obiettivi delle componenti di upstream e downstream}
+\label{subsec:obiettivi-upstream-downstream}
+
+Per quanto riguarda le componenti di \emph{upstream} e \emph{downstream}, il processo di reingegnerizzazione comprende i seguenti obiettivi:
+
+\begin{itemize}
+    \item \textbf{Eliminazione di comunicazione inter-processo}: sostituzione dei processi di sistema basati su interazioni tra processi differenti con un modello di esecuzione controllata.
+    
+    \item \textbf{Gestione della concorrenza}: implementazione di un \emph{concurrent fan-out}, al fine di incrementare la reattività del sistema senza appesantire i server su cui viene eseguito.
+
+    \item \textbf{Scalabilità orizzontale}: standardizzazione dell'infrastruttura mediante container Docker leggeri, orchestrati tramite Docker Compose, sia per gli ambienti di test sia per quelli di produzione, così da garantire una crescita scalabile e uniforme del sistema.
+
+    \item \textbf{Garanzia di compatibilità}: mantenimento rigoroso dei contratti delle \ac{API} \ac{REST}, sia per i client dashboard sia per i servizi downstream/upstream connessi all'infrastruttura basata su MySQL e PostgreSQL, assicurando la continuità operativa con i sistemi preesistenti.
+\end{itemize}
+
+\subsection{Integrazione con FlashStart 2026}
+\label{subsec:integrazione-flashstart}
+
+Nell'ottica dell'integrazione del servizio con la piattaforma \emph{FlashStart 2026}, si rende necessaria una riprogettazione sia dell'interfaccia grafica sia della rotta \ac{HTTP} dedicata all'esecuzione del servizio all'interno del nuovo applicativo, al fine di garantirne la piena interoperabilità con l'ambiente di destinazione.
+
+\section{Limitazioni}
+\label{sec:limitazioni}
+ 
+Per quanto riguarda le componenti di \emph{downstream} e \emph{upstream}, il processo di progettazione è soggetto ai seguenti vincoli:
+ 
+\begin{itemize}
+    \item \textbf{Efficienza}: il software deve risultare il più leggero e performante possibile, dovendo essere dispiegato su server chiamati a gestire milioni di richieste giornaliere. È pertanto necessario che l'esecuzione del sistema non comporti un degrado delle prestazioni delle macchine fisiche sottostanti.
+ 
+    \item \textbf{Retrocompatibilità}: il software delle componenti di downstream e upstream deve garantire la piena retrocompatibilità con la versione precedente, in modo da poter essere utilizzato dalla dashboard legacy senza richiedere ulteriori modifiche al codice attualmente in produzione.
+\end{itemize}
+
+\section{Analisi dei Requisiti}
+\label{sec:requirement-analysis}
+
+I due servizi principali devono essere progettati seguendo il pattern di programmazione MVC.Devono esporre delle api ben definite, analizzare le richieste ricevute e eseguire le operazioni sui dati.
+\subsection{Upstream aggregator}
+\label{subsec:upstream-analysis}
+Il servizio di upstream dovrà essere composto da 3 sezioni distinte.
+In primo luogo il sistema dovrà recuperare la lista di indirizzi ip dei server da interrogare attraverso una chiamata al database aziendale interno.
+Successivamente dovrà interrogare i vari indirizzi ottenuti e infine validare i valori di output ottenuti da ciascun server di downstream.
+
+Questo servizio deve esporre due interfacce \ac{API}:
+\begin{itemize}
+    \item \texttt{GET api/latency/\{network\}}: interfaccia utilizzata da altri servizi all'interno di FlashStart Cloud, non strettamente necessaria per la modernizzazione del servizio di latency ma mantenuta per retrocompatibilità.
+    \item \texttt{GET api/latency/cloud\{network\}}: interfaccia utilzzata direttamente dal servizio di latency.
+\end{itemize}
+
+Il parametro del percorso \texttt{network} deve essere un indirizzo ipv4 o ipv6 valido che corrisponde all'indirizzo della macchina su cui devono essere calcolati i tempi di risposta dei vari server.
+
+La risposta ottenuta dalle due interfacce deve essere omogenea e corrispondere con la struttura del messaggio del servizio legacy per mantenere la retrocompatibilità \cref{lst:upstream-response}.
+\lstinputlisting[float,language=json,label={lst:upstream-response}]{listings/upstream-response.json}
+
+\subsubsection{Recupero della lista dei server}
+In base alla rotta chiamata deve essere selezionata una lista diversa di server da interrogare.
+\begin{itemize}
+    \item \texttt{api/latency/} seleziona gli host fisici attualmente attivi.
+    \item \texttt{api/latency/cloud} seleziona una lista di host virtuali dispiegati sul cloud.
+\end{itemize}
+
+Il fallimento della richiesta o il superamento di una deadline pre-impostata comporta il fallimento della richiesta di latenza
+
+\subsubsection{Aggregazione dei valori}
+In questa sezione il sistema deve validare ciascun indirizzo \ac{IP} ottenuto in precedenza.
+Per ogni host valido verrà interrogato il server downstream corrispondente per ottenere il relativo valore della latenza rispetto all'indirizzo fornito dall'utente.
+Ogni richiesta deve essere trattata in maniera indipendente dalle altre: il fallimento di una richiesta non deve compromettere l'intera aggregazione.
+Una volta ottenuti, i risultati devono essere normalizzati per aderire al modello di risposta analizzato in precedenza.
+Se una richiesta fallisce, impiega troppo tempo o ritorna un codice \ac{HTTP} diverso da \texttt{2xx}, deve essere assegnato il valore \texttt{-1} alla risposta di quel server.
+
+Infine la lista di valori deve essere ordinata in ordine ascendente secondo il valore della latenza.
+\subsection{Downstream}
+\label{subsec:downstream-analysis}
+
+Il servizio di downstream costituisce il componente responsabile della misurazione della latenza di rete verso host remoti. La sua superficie di esposizione verso l'esterno è volutamente minimale e si riduce a un'unica interfaccia \ac{API}, mantenendo così il servizio semplice da consumare e da mantenere:
+\begin{itemize}
+    \item \texttt{GET /api/latency}
+\end{itemize}
+
+Affinché una richiesta sia considerata valida, essa deve contenere un parametro \texttt{network} all'interno della richiesta \ac{HTTP}. Il valore associato a tale parametro deve rappresentare un indirizzo \ac{IP} sintatticamente corretto, sia esso espresso in formato IPv4 che IPv6: il servizio deve infatti essere in grado di gestire indistintamente entrambe le versioni del protocollo.
+
+Non appena la richiesta viene ricevuta dal servizio, essa deve essere sottoposta a un processo di validazione preliminare, eseguito prima di qualsiasi altra elaborazione. Nello specifico:
+\begin{itemize}
+    \item se il parametro \texttt{network} è assente dalla richiesta, oppure
+    \item se il valore fornito non corrisponde a un indirizzo \ac{IP} valido,
+\end{itemize}
+la richiesta deve essere rifiutata immediatamente, senza procedere ad alcuna operazione successiva, restituendo il codice di stato \texttt{403}. Questo comportamento garantisce che il servizio non impieghi risorse computazionali per richieste malformate.
+
+Una volta superata la fase di validazione, la richiesta deve restituire un semplice valore numerico, che rappresenta il tempo di risposta medio o \ac{RTT} rilevato eseguendo un ping dal server che gestisce la richiesta verso la macchina identificata dall'indirizzo \ac{IP} fornito nel campo \texttt{network}.
+
+\subsubsection{Esecuzione del ping}
+Una volta che l'indirizzo fornito è stato validato con successo, il servizio deve procedere all'esecuzione del ping verso la macchina specificata. È fondamentale che questo passaggio operativo risulti del tutto indipendente dalla versione dell'indirizzo \ac{IP} ricevuto: la logica di esecuzione deve comportarsi in maniera uniforme, a prescindere dal fatto che si tratti di un indirizzo IPv4 o IPv6.
+
+Data la natura sincrona e potenzialmente bloccante di questa operazione, devono essere introdotte delle deadline stringenti, il cui scopo è evitare che il servizio consumi risorse in maniera eccessiva o rimanga in attesa per periodi di tempo troppo lunghi. Tale deadline non è un valore statico, bensì viene derivata dinamicamente in funzione del numero di pacchetti \ac{ICMP} inviati durante l'operazione di ping, a cui viene sommato un piccolo buffer fisso, introdotto per assorbire eventuali variazioni minime nei tempi di rete.
+
+\subsubsection{Validazione del risultato.}
+Infine, una volta completata l'esecuzione del ping, il risultato ottenuto deve essere sottoposto a un'ulteriore fase di validazione prima di essere restituito al chiamante:
+\begin{itemize}
+    \item se la percentuale di pacchetti persi durante l'operazione (packet loss) risulta superiore al $50\%$, tale da compromettere in maniera significativa l'affidabilità del calcolo del tempo di risposta medio, la richiesta deve restituire il valore di fallback \texttt{-1}, anziché un valore numerico calcolato su un campione di dati insufficiente o inattendibile.
+\end{itemize}
+
+Il servizio è progettato per essere resiliente: se in un qualsiasi momento dell'elaborazione si verifica un errore, di qualunque natura esso sia, la richiesta non deve terminare con un fallimento esplicito. Al contrario, deve attivarsi un meccanismo di fallback che intercetta la condizione di errore e restituisce un valore di default pari a \texttt{-1}, mantenendo così la richiesta sempre rispondente e prevedibile dal punto di vista del chiamante.
+
+\subsubsection{Responsabilità dell'utente e prerequisiti}
+È responsabilità dell'utente che effettua la richiesta assicurarsi che la macchina di destinazione, identificata dall'indirizzo \ac{IP} fornito in input, abbia il protocollo \ac{ICMP} correttamente attivo e raggiungibile. Il servizio non è tenuto a verificare né a garantire tale condizione a monte:
+\begin{itemize}
+    \item qualora il protocollo \ac{ICMP} non risulti attivo sulla macchina di destinazione, la richiesta deve fallire, riportando un errore nei log di tipo \texttt{host unreachable} e ritornando il valore \texttt{-1}.
+\end{itemize}
+
+\subsection{Integrazione con FlashStart 2026}
+
+L'integrazione con il nuovo applicativo rappresenta il livello applicativo che permette di esporre, in maniera fruibile e sicura, i dati di latenza calcolati dai servizi sottostanti. Il suo scopo principale è quello di fare da tramite tra il backend di misurazione, descritto nelle sezioni precedenti, e l'interfaccia di FlashStart 2026, la quale deve essere in grado di mostrare tali dati in maniera chiara e contestualizzata, tipicamente sovrapposti a una mappa geografica.
+
+Per realizzare questa integrazione, è necessario aggiungere una nuova \ac{API} all'insieme dei microservizi attualmente esistenti. A differenza del servizio di downstream. Questa nuova \ac{API} ha responsabilità di orchestrazione. Nello specifico, il suo compito consiste nell'eseguire, in sequenza, le seguenti operazioni:
+\begin{enumerate}
+    \item autenticare l'utente che effettua la richiesta del servizio di latenza, verificando la validità delle sue credenziali, attraverso il servizio di autenticazione dell'applicativo;
+    \item controllare che l'utente autenticato disponga dei permessi necessari per poter eseguire l'operazione richiesta, impedendo quindi accessi non autorizzati alla funzionalità;
+    \item interrogare il servizio di upstream, delegando a quest'ultimo l'effettivo svolgimento della misurazione della latenza;
+    \item ricevere la risposta prodotta dal servizio di upstream, gestendone opportunamente il contenuto;
+    \item recuperare tutte le informazioni aggiuntive necessarie a rendere il risultato visualizzabile e comprensibile all'interno della mappa mostrata dall'interfaccia.
+\end{enumerate}
+Questa suddivisione delle responsabilità consente di mantenere una netta separazione tra la logica di misurazione, incapsulata nei servizi di downstream e upstream, e la logica di esposizione verso l'utente finale, di competenza di questa nuova \ac{API}.
+
+\paragraph{Informazioni aggiuntive necessarie.}
+Affinché i risultati possano essere rappresentati correttamente sulla mappa, non è sufficiente il solo valore numerico della latenza: è necessario arricchire la risposta con ulteriori dati di contesto geografico. In particolare, sono richieste le seguenti informazioni aggiuntive:
+\begin{itemize}
+    \item la geolocalizzazione di ciascun server interrogato, espressa a livello di città, comprensiva di latitudine e longitudine, nonché del nome della città a cui il server appartiene. Questo livello di dettaglio più granulare è necessario poiché i server interrogati devono essere mostrati correttamente sulla mappa: ad esempio, due server situati negli Stati Uniti non devono comparire nello stesso punto, come invece accadeva nella vecchia interfaccia, a causa di una geolocalizzazione troppo approssimativa.
+    \item la geolocalizzazione dell'indirizzo IP fornito dal client al momento della richiesta, espressa invece a un livello di dettaglio inferiore, ovvero a livello di nazione, riportando quindi solamente la latitudine e la longitudine associate a tale nazione.
+\end{itemize}
+
+\paragraph{Coerenza con la codebase esistente.}
+Infine, un requisito trasversale e non trascurabile è che l'intera integrazione con il nuovo applicativo dovrà essere realizzata in maniera coerente con la codebase già esistente, sia dal punto di vista architetturale che stilistico. Ciò implica il rispetto delle convenzioni di progettazione, delle pratiche di autenticazione e autorizzazione già in uso, nonché delle modalità di comunicazione tra microservizi adottate nel resto del sistema, evitando quindi di introdurre pattern o soluzioni disomogenee rispetto al contesto applicativo preesistente.
