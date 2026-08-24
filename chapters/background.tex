@@ -50,7 +50,7 @@ Analogamente all'Upstream Orchestrator, il Downstream è composto da un controll
 Il latency engine non è altro che uno script php esegue comandi shell di sistema \texttt{ping} o \texttt{ping6} gestendo l'output come stringa rigida.
 Il parsing dell'output si basa su indici di riga fissi.
 
-\lstinputlisting[float,language=Java,label={lst:ping-output}]{listings/Ping.sh}
+\lstinputlisting[float,language=c++,label={lst:ping-output}]{listings/Ping-example}
 
 Il parser si aspetta come input una stringa con un formato specifico (\cref{lst:ping-output}) andando a leggere precisamente la settima riga ricavando il tempo medio di risposta attraverso semplici operazioni con le stringhe.
 Questo metodo è altamente vulnerabile alle variazioni del sistema operativo target.
