@@ -1,3 +1,6 @@
 - Information flow diagram
 - Anycast network definition
 - fanout definition
+- design: downstream strategy uml
+- design: upstream parallel pattern uml
+- design: middleware chain of responsibilitu uml
