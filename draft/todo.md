@@ -1,6 +1,5 @@
 - Information flow diagram
 - Anycast network definition
-- fanout definition
-- design: downstream strategy uml
+- revisiona background chapter
 - design: upstream parallel pattern uml
 - design: middleware chain of responsibilitu uml

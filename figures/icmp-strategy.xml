@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="app.diagrams.net">
+  <diagram name="Page-1" id="KUnJ8GRC1GWvg3uhNrAx">
+    <mxGraphModel dx="849" dy="629" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="XaWdrwrndce_N9VU3yYj-23" parent="1" style="swimlane;fontStyle=0;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=55;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=0;marginBottom=0;html=1;whiteSpace=wrap;" value="&lt;b&gt;EchoStream&lt;/b&gt;" vertex="1">
+          <mxGeometry height="110" width="140" x="110" y="170" as="geometry" />
+        </mxCell>
+        <mxCell id="XaWdrwrndce_N9VU3yYj-30" parent="XaWdrwrndce_N9VU3yYj-23" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;" value="+Open()&lt;div&gt;+Close()&lt;/div&gt;&lt;div&gt;+SendEcho()&lt;/div&gt;" vertex="1">
+          <mxGeometry height="55" width="140" y="55" as="geometry" />
+        </mxCell>
+        <mxCell id="XaWdrwrndce_N9VU3yYj-32" edge="1" parent="1" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=circle;endFill=0;endSize=3;dashed=1;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="200.02" y="349.82" as="sourcePoint" />
+            <mxPoint x="200.02" y="248.61" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="XaWdrwrndce_N9VU3yYj-31" parent="1" style="shape=note2;boundedLbl=1;whiteSpace=wrap;html=1;size=25;verticalAlign=top;align=center;" value="icmpStrategy.CloseConnection()" vertex="1">
+          <mxGeometry height="60" width="180" x="100" y="350" as="geometry" />
+        </mxCell>
+        <mxCell id="XaWdrwrndce_N9VU3yYj-42" edge="1" parent="1" source="XaWdrwrndce_N9VU3yYj-33" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;endArrow=diamondThin;endFill=0;startArrow=blockThin;startFill=1;endSize=14;" target="XaWdrwrndce_N9VU3yYj-23">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="XaWdrwrndce_N9VU3yYj-33" parent="1" style="swimlane;fontStyle=0;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=55;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=0;marginBottom=0;html=1;whiteSpace=wrap;" value="&lt;b&gt;EchoStream&lt;/b&gt;" vertex="1">
+          <mxGeometry height="110" width="140" x="505" y="170" as="geometry" />
+        </mxCell>
+        <mxCell id="XaWdrwrndce_N9VU3yYj-35" parent="1" style="swimlane;fontStyle=0;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=55;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=0;marginBottom=0;html=1;whiteSpace=wrap;" value="&lt;b&gt;ICMPv4&lt;/b&gt;" vertex="1">
+          <mxGeometry height="110" width="140" x="370" y="360" as="geometry" />
+        </mxCell>
+        <mxCell id="XaWdrwrndce_N9VU3yYj-36" parent="XaWdrwrndce_N9VU3yYj-35" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;" value="+OpenConnection()&lt;br&gt;+CloseConnection()" vertex="1">
+          <mxGeometry height="55" width="140" y="55" as="geometry" />
+        </mxCell>
+        <mxCell id="XaWdrwrndce_N9VU3yYj-40" edge="1" parent="1" source="XaWdrwrndce_N9VU3yYj-37" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;endArrow=block;endFill=0;" target="XaWdrwrndce_N9VU3yYj-33">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="705" y="330.01" />
+              <mxPoint x="575" y="330.01" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="XaWdrwrndce_N9VU3yYj-37" parent="1" style="swimlane;fontStyle=0;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=55;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=0;marginBottom=0;html=1;whiteSpace=wrap;" value="&lt;b&gt;ICMPv6&lt;/b&gt;" vertex="1">
+          <mxGeometry height="110" width="140" x="635" y="360" as="geometry" />
+        </mxCell>
+        <mxCell id="XaWdrwrndce_N9VU3yYj-38" parent="XaWdrwrndce_N9VU3yYj-37" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;" value="+OpenConnection()&lt;br&gt;+CloseConnection()" vertex="1">
+          <mxGeometry height="55" width="140" y="55" as="geometry" />
+        </mxCell>
+        <mxCell id="XaWdrwrndce_N9VU3yYj-39" edge="1" parent="1" source="XaWdrwrndce_N9VU3yYj-35" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;endArrow=none;endFill=0;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="445" y="330.01" />
+            </Array>
+            <mxPoint x="575" y="330" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="XaWdrwrndce_N9VU3yYj-34" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;" value="+OpenConnection()&lt;br&gt;+CloseConnection()" vertex="1">
+          <mxGeometry height="55" width="140" x="505" y="225" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

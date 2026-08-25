@@ -7,8 +7,14 @@ Per alcune delle decisioni prese vengono inoltre discusse le alternative valutat
 \section{Gestione trasparente delle versioni IP}
 \label{sec:ipversion-handler}
 Il servizio di downstream deve essere in grado di gestire in maniera trasparente le due versioni del protocollo \ac{IP} (IPv4 e IPv6), evitando che la logica applicativa debba occuparsi esplicitamente delle differenze tra i due protocolli.
-Le operazioni specifiche di ciascuna versione vengono quindi delegate a una classe dedicata che, sfruttando il pattern \emph{strategy} \cite[pp.~315--323]{gamma1994design}, incapsula le diverse implementazioni necessarie all'invio del messaggio \ac{ICMP} in base alla versione del protocollo \ac{IP} utilizzata.
+Le operazioni specifiche di ciascuna versione vengono quindi delegate a una classe dedicata che, sfruttando il pattern \emph{strategy} \cite[pp.~315--323]{gamma1994design} (\cref{fig:icmp-stretegy}), incapsula le diverse implementazioni necessarie all'invio del messaggio \ac{ICMP} in base alla versione del protocollo \ac{IP} utilizzata.
 Rispetto a una soluzione basata su costrutti condizionali (\texttt{if}/\texttt{else} o \texttt{switch}) sparsi nel codice, questa scelta consente di aggiungere in futuro il supporto a nuove versioni del protocollo, o nuove modalità di invio, senza dover modificare il codice client che utilizza tali classi, rispettando così il principio open/closed.
+\begin{figure}
+    \centering
+    \includegraphics[width=1\linewidth]{figures/icmp-stretegy.pdf}
+    \caption{Diagramma delle classi del pattern strategy. La classe \texttt{EchoStream} delega il comportamento di apertura e chiusura del canale ad un oggetto \texttt{ICMPStrategy} intercambiabile.}
+    \label{fig:icmp-stretegy}
+\end{figure}
 
 \section{Fan-out parallelo}
 \label{sec:parallel-fanout}
