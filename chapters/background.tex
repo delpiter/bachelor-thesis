@@ -55,6 +55,7 @@ Il parsing dell'output si basa su indici di riga fissi.
 Il parser si aspetta come input una stringa con un formato specifico (\cref{lst:ping-output}) andando a leggere precisamente la settima riga ricavando il tempo medio di risposta attraverso semplici operazioni con le stringhe.
 Questo metodo è altamente vulnerabile alle variazioni del sistema operativo target.
 
+Il servizio di downstream è integrato all'interno del \ac{DNS} provider; Per questo motivo in ciascun server della rete anycast ci potrebbero essere diversi dispiegamenti del servizio, consumando inutilmente risorse computazionali importanti.
 \section{La route \texttt{php}}
 \label{section:route-php}
 
@@ -80,7 +81,7 @@ Complessivamente, il flusso di una richiesta attraversa le tre componenti descri
 
 \begin{figure}
     \centering
-    \includegraphics[width=.6\linewidth]{figures/legacy-architecture.pdf}
-    \caption{Architettura del servizio legacy}
+    \includegraphics[width=.8\linewidth]{figures/legacy-architecture.pdf}
+    \caption{Diagramma dell'Architettura del servizio legacy. In ogni firewall della rete sono presenti uno o più servizi di downstream.}
     \label{fig:legacy-architecture}
 \end{figure}
