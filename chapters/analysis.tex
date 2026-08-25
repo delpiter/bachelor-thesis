@@ -97,6 +97,8 @@ la richiesta deve essere rifiutata immediatamente, senza procedere ad alcuna ope
 
 Una volta superata la fase di validazione, la richiesta deve restituire un semplice valore numerico, che rappresenta il tempo di risposta medio o \ac{RTT} rilevato eseguendo un ping dal server che gestisce la richiesta verso la macchina identificata dall'indirizzo \ac{IP} fornito nel campo \texttt{network}.
 
+Infine, deve essere possibile attivare un middleware aggiuntivo in grado di filtrare le richieste ricevute in base all'indirizzo del mittente.
+Questo serve a permettere l'utilizzo del servizio solamente da indirizzi predefiniti come l'indirizzo dell'upstream aggregator.
 \subsubsection{Esecuzione del ping}
 Una volta che l'indirizzo fornito è stato validato con successo, il servizio deve procedere all'esecuzione del ping verso la macchina specificata. È fondamentale che questo passaggio operativo risulti del tutto indipendente dalla versione dell'indirizzo \ac{IP} ricevuto: la logica di esecuzione deve comportarsi in maniera uniforme, a prescindere dal fatto che si tratti di un indirizzo IPv4 o IPv6.
 
