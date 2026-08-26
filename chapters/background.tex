@@ -57,7 +57,7 @@ Il parsing dell'output si basa su indici di riga fissi.
     caption={[Output del comando ping.] Esempio dell'output del comando ping atteso dal parser.}
     ]{listings/Ping-example}
 
-Il parser si aspetta come input una stringa con un formato specifico (\cref{lst:ping-output}) andando a leggere precisamente la settima riga ricavando il tempo medio di risposta attraverso semplici operazioni con le stringhe.
+Il parser si aspetta come input una stringa con un formato specifico (\Cref{lst:ping-output}) andando a leggere precisamente la settima riga ricavando il tempo medio di risposta attraverso semplici operazioni con le stringhe.
 Questo metodo è altamente vulnerabile alle variazioni del sistema operativo target.
 
 Il servizio di downstream è integrato all'interno del \ac{DNS} provider; Per questo motivo in ciascun server della rete anycast ci potrebbero essere diversi dispiegamenti del servizio, consumando inutilmente risorse computazionali importanti.
