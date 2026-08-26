@@ -59,7 +59,12 @@ Questo servizio deve esporre due interfacce \ac{API}:
 Il parametro del percorso \texttt{network} deve essere un indirizzo ipv4 o ipv6 valido che corrisponde all'indirizzo della macchina su cui devono essere calcolati i tempi di risposta dei vari server.
 
 La risposta ottenuta dalle due interfacce deve essere omogenea e corrispondere con la struttura del messaggio del servizio legacy per mantenere la retrocompatibilità \cref{lst:upstream-response}.
-\lstinputlisting[float,language=json,label={lst:upstream-response}]{listings/upstream-response.json}
+\lstinputlisting[
+    float,
+    language=json,
+    label={lst:upstream-response},
+    caption={[Esempio di risposta dell'upstream aggregator.]Esempio della struttura della risposta dell'upstream aggregator.}    
+    ]{listings/upstream-response.json}
 
 \subsubsection{Recupero della lista dei server}
 In base alla rotta chiamata deve essere selezionata una lista diversa di server da interrogare.

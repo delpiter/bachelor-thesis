@@ -12,7 +12,7 @@ Rispetto a una soluzione basata su costrutti condizionali (\texttt{if}/\texttt{e
 \begin{figure}
     \centering
     \includegraphics[width=1\linewidth]{figures/icmp-strategy.pdf}
-    \caption{Diagramma delle classi del pattern strategy. La classe \texttt{EchoStream} delega il comportamento di apertura e chiusura del canale ad un oggetto \texttt{ICMPStrategy} intercambiabile.}
+    \caption[Diagramma delle classi del pattern strategy.]{La classe \texttt{EchoStream} delega il comportamento di apertura e chiusura del canale ad un oggetto \texttt{ICMPStrategy} intercambiabile.}
     \label{fig:icmp-stretegy}
 \end{figure}
 
@@ -42,7 +42,7 @@ Alcuni esempi di handler sono la gestione del logging strutturato e il disaster 
 \begin{figure}
     \centering
     \includegraphics[width=1\linewidth]{figures/http-middleware.pdf}
-    \caption{Diagramma delle classi del pattern chain of responsibility nel caso del servizio downstream. Alla creazione dell'gestore della richiesta vengono aggiunti tutti i middleware necessari alla corretta esecuzione della richiesta. Il \texttt{IpWhitelistMiddleware} ha il compito di filtrare le richieste ricevute in base all'indirizzo del mittente.
+    \caption[Diagramma delle classi del pattern chain of responsibility.]{Specifico nel caso del servizio downstream. Alla creazione dell'gestore della richiesta vengono aggiunti tutti i middleware necessari alla corretta esecuzione della richiesta. Il \texttt{IpWhitelistMiddleware} ha il compito di filtrare le richieste ricevute in base all'indirizzo del mittente.
     Questo middleware può terminare la catena di esecuzione.}
     \label{fig:http-middleware}
 \end{figure}
@@ -63,7 +63,7 @@ L'architettura risultante, illustrata in \cref{fig:fs-integration-mvc}, evidenzi
 \begin{figure}
     \centering
     \includegraphics[width=1\linewidth]{figures/fs-integration-mvc.pdf}
-    \caption{Architettura del backend per FlashStart 2026. Per esporre correttamente le informazioni richieste in fase di analisi, la classe \texttt{LatencyService} deve unire i risultati di due richieste differenti: la richiesta di latenza dall'upstream aggregator e i dati dei server dal database.}
+    \caption[Architettura del backend per FlashStart 2026.]{Per esporre correttamente le informazioni richieste in fase di analisi, la classe \texttt{LatencyService} deve unire i risultati di due richieste differenti: la richiesta di latenza dall'upstream aggregator e i dati dei server dal database.}
     \label{fig:fs-integration-mvc}
 \end{figure}
 
