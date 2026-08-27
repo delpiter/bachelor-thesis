@@ -102,3 +102,17 @@ Dopo l'intervento dell'esperto UX, il mockup si è evoluto significativamente: d
 % [mockup finale]
 
 Il design finale mostra i dati in maniera chiara e organizzata, con uno stile riadattato per integrarsi con il resto dell'applicazione. Oltre a migliorare la leggibilità e l'immediatezza delle informazioni presentate, la nuova struttura lascia spazio a possibili estensioni future, consentendo l'aggiunta di nuove funzionalità o sezioni senza compromettere la coerenza complessiva dell'interfaccia.
+\subsection{Scelta della libreria per la mappa}
+La scelta della libreria per il rendering della mappa è stata un processo lungo e articolato, durante il quale sono stati analizzati pro e contro di diverse soluzioni tecnologiche, valutando in particolare il compromesso tra prestazioni, costi e complessità di manutenzione.
+
+Inizialmente è stata analizzata \texttt{OpenLayers}, una libreria open source pensata per il rendering ad alte prestazioni di mappe dinamiche all'interno di applicazioni web. La libreria consente di visualizzare la mappa del mondo suddividendola in ``tile''\footnote{Una tile è una sezione quadrata della mappa corrispondente a un certo livello di zoom.}, un approccio che massimizza le prestazioni e garantisce fluidità durante le operazioni di spostamento e zoom, poiché vengono caricate solo le porzioni di mappa effettivamente visibili all'utente.
+
+Tuttavia, per renderizzare una mappa basata su tile è necessario appoggiarsi a un map provider in grado di rispondere alle richieste delle singole tile generate dal client. Dopo numerose ricerche, sono emerse due opzioni percorribili:
+\begin{itemize}
+    \item \emph{Provider a pagamento}: sottoscrivere un abbonamento mensile a un servizio esterno che fornisce le \ac{API} necessarie per il recupero delle singole tile. Questa opzione è stata scartata per evitare di introdurre dei costi ricorrenti.
+    \item \emph{Self hosting}: allestire un server dedicato contenente l'intero set di tile ed esporre autonomamente le \ac{API} necessarie. Anche questa strada è stata scartata, poiché l'insieme completo delle immagini richiedeva oltre 100 Gb di spazio di archiviazione, un requisito ritenuto eccessivo rispetto alle risorse disponibili per il progetto.
+\end{itemize}
+
+Un'ulteriore alternativa valutata è stata quella di renderizzare l'intera mappa come una singola immagine vettoriale. Questo approccio avrebbe eliminato la dipendenza da provider esterni e da grandi quantità di storage, ma si è rivelato inadeguato dal punto di vista delle prestazioni: il rendering di un'unica geometria vettoriale complessa comportava tempi di caricamento elevati e una scarsa reattività, rendendo l'esperienza utente poco fluida.
+
+Considerati i limiti delle soluzioni precedenti, è stata infine scelta una seconda libreria: \texttt{amcharts5}, una libreria generica per la creazione di grafici che offre, tra i propri moduli, anche il supporto al rendering di mappe dinamiche. L'utilizzo di questa libreria si è rivelato un buon compromesso tra le prestazioni desiderate e la gratuità del servizio: non richiede infatti alcun provider esterno per le tile, poiché si basa su geometrie vettoriali ottimizzate, garantendo al contempo un livello di interattività e fluidità adeguato alle esigenze del progetto.
