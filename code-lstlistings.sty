@@ -72,3 +72,12 @@
       {[}{{{\color{delim}{[}}}}{1}
       {]}{{{\color{delim}{]}}}}{1},
 }
+
+\lstdefinelanguage{Dockerfile}{
+  morekeywords={FROM, RUN, CMD, LABEL, MAINTAINER, EXPOSE, ENV, ADD, COPY, ENTRYPOINT, VOLUME, USER, WORKDIR, ARG, ONBUILD, STOPSIGNAL, HEALTHCHECK, SHELL},
+  morecomment=[l]{\#},
+  morestring=[b]",
+  keywordstyle=\color{purple}\bfseries,
+  commentstyle=\color{gray},
+  stringstyle=\color{green}
+}
