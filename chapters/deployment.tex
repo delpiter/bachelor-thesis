@@ -18,7 +18,7 @@ Per il dispiegamento dei servizi di downstream e upstream all'interno dei server
     float,
     language=Dockerfile,
     label={lst:multistage-dockerfile},
-    caption={[Multistage Dockerfile] Dockerfile a stage multipli utilizzato per il dispiegamento sia del servizio di downstream che dell'upstream aggregator. In particolare questo dockerfile è utilizzato dal downstream, si può notare dall'aggiunta dei permessi di rete, necessari per l'esecuzione del ping.}
+    caption={[Multistage Dockerfile] Dockerfile a stage multipli utilizzato per il dispiegamento sia del servizio di downstream che dell'upstream aggregator. In particolare questo dockerfile è utilizzato dal downstream, si può notare dall'aggiunta delle ``network capabilities'', necessarie per l'esecuzione del ping.}
     ]{listings/Dockerfile}
 Per evitare di caricare sui server codice binario inutilizzato come il compilatore del linguaggio, è stato creato il dockerfile multistage riportato nel \cref{lst:multistage-dockerfile}.
 
