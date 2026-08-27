@@ -1,0 +1,62 @@
+\chapter{Analisi dei Risultati}
+\label{chap:results}
+Durante l'intero sviluppo del servizio è stata applicata la metodologia del \ac{TDD}, in conformità a un requisito stabilito dall'azienda durante il percorso di tirocinio.
+Per ciascuna componente del servizio sono stati creati diversi casi di test basandosi sulle specifiche dettate in fase di analisi.
+Questo capitolo descrive la metodologia con cui sono stati creati i test per i vari componenti del servizio.
+
+\section{Testing in Go}
+Per le componenti di upstream e downstream è stato privilegiato l'utilizzo degli strumenti nativi del linguaggio Go per il testing automatico (package testing della standard library), in linea con le convenzioni del linguaggio e senza la necessità di introdurre dipendenze esterne aggiuntive.
+
+La suite di test è stata progettata per coprire le principali cause di errore individuate in fase di analisi, con l'obiettivo di intercettare tempestivamente malfunzionamenti che potrebbero compromettere la stabilità dei servizi in produzione. Nello specifico, sono state individuate tre aree critiche su cui concentrare lo sforzo di testing:
+
+\subsection{Caricamento della configurazione}
+Sia il servizio di upstream che quello di downstream necessitano, in fase di avvio, del caricamento di un insieme di variabili d'ambiente indispensabili per il corretto funzionamento del sistema (ad esempio parametri di connessione, endpoint, credenziali o soglie operative). Sono stati quindi implementati test volti a verificare che:
+\begin{itemize}
+    \item in presenza di tutte le variabili richieste con valori validi, il servizio si avvii correttamente e le configurazioni vengano caricate secondo quanto atteso;
+    \item in caso di assenza di una o più variabili obbligatorie, l'esecuzione del servizio venga interrotta in modo controllato, restituendo un messaggio di errore esplicativo;
+    \item in caso di valori inconsistenti o non validi (ad esempio formati errati, valori fuori range o tipi di dato non compatibili), il servizio rilevi l'anomalia e blocchi l'avvio, evitando che possa proseguire in uno stato potenzialmente instabile o non affidabile.
+\end{itemize}
+
+Questo approccio fail-fast garantisce che eventuali errori di configurazione vengano individuati immediatamente all'avvio del servizio, piuttosto che manifestarsi in modo imprevedibile durante l'esecuzione in produzione.
+
+\subsection{Funzioni principali}
+Sono stati inoltre realizzati test dedicati alle funzioni core di ciascun servizio, tra cui in particolare:
+\begin{itemize}
+    \item \emph{Ping}: funzione responsabile della richiesta di connessione alla rete, testata per verificarne il corretto comportamento sia in condizioni di successo che in scenari di fallimento della connessione (ad esempio timeout o rete non raggiungibile).
+    \item \emph{Aggregatore}:componente incaricata dell'elaborazione e aggregazione dei dati, per la quale sono stati definiti test volti a validare la correttezza dei risultati prodotti a fronte di diversi set di dati in input.
+\end{itemize}
+
+\subsection{Route HTTP}
+Per la validazione delle route \ac{HTTP} esposte dai due servizi è stato utilizzato il package \texttt{net/http/httptest}, appartenente alla standard library di Go, che consente di simulare richieste \ac{HTTP} senza la necessità di avviare un server reale e in ascolto su una porta di rete. Attraverso questo strumento sono state simulate le chiamate \texttt{GET} verso gli endpoint esposti da upstream e downstream, permettendo di verificare:
+\begin{itemize}
+    \item la correttezza dei codici di stato \ac{HTTP} restituiti nelle diverse casistiche (successo, errore, risorsa non trovata, ecc.);
+    \item la corretta struttura e il contenuto del payload di risposta;
+    \item il corretto comportamento del servizio a fronte di richieste malformate o parametri mancanti.
+\end{itemize}
+
+L'utilizzo di \texttt{httptest} ha permesso di eseguire i test in modo rapido e isolato, senza dipendenze dall'infrastruttura di rete reale, garantendo al contempo un elevato grado di realismo nella simulazione delle interazioni \ac{HTTP}.
+
+\section{Unit e integration test}
+Al fine di garantire l'affidabilità e la correttezza del nuovo microservizio introdotto nel sistema, è stata predisposta una strategia di testing articolata su due livelli complementari: unit test e integration test.
+
+Gli unit test sono stati progettati per verificare il corretto funzionamento delle singole componenti in isolamento, escludendo dipendenze esterne e concentrandosi esclusivamente sulla logica interna di ciascuna funzione o modulo.
+
+Gli integration test, invece, sono stati concepiti per validare il corretto funzionamento del nuovo microservizio FlashStart 2026 nel contesto più ampio dell'applicativo, verificando che le interazioni tra i vari componenti del sistema (in particolare tra il microservizio stesso e i servizi preesistenti) avvengano correttamente e producano i risultati attesi.
+Questo livello di test si è rivelato particolarmente rilevante per intercettare problematiche non emerse durante il testing isolato delle singole unità, come incompatibilità nei formati di scambio dati, errori nella gestione delle chiamate asincrone o comportamenti inattesi derivanti da configurazioni condivise tra i moduli.
+
+\subsection{Strumenti e librerie utilizzate}
+Per l'implementazione della suite di test automatizzati sono state adottate le seguenti librerie, ampiamente diffuse nell'ecosistema \texttt{JavaScript} e \texttt{Node.js}:
+\begin{itemize}
+    \item \emph{Mocha}: framework di testing utilizzato come motore di esecuzione dei test, responsabile dell'organizzazione dei casi di test in suite (\texttt{describe}) e singoli test (\texttt{it}), nonché della generazione dei relativi report di esecuzione.
+    \item \emph{Chai}: libreria di assertion utilizzata per la verifica dei valori attesi rispetto ai risultati effettivamente prodotti dal codice sotto test. La sintassi \texttt{expect} e \texttt{should} ha permesso di scrivere asserzioni chiare e leggibili, migliorando la manutenibilità dei test stessi.
+    \item \emph{Sinon}: strumento di mocking e stubbing utilizzato per isolare le componenti sotto test dalle loro dipendenze esterne, in particolare per simulare chiamate a servizi esterni, database o \ac{API} di terze parti, evitando così effetti collaterali indesiderati durante l'esecuzione dei test e garantendo la ripetibilità dei risultati.
+\end{itemize}
+
+\subsection{Funzioni di seeding}
+Per garantire condizioni di test consistenti e riproducibili, sono state implementate apposite funzioni di seeding, incaricate di popolare l'ambiente di test con un insieme predefinito di dati fittizi ma realistici prima dell'esecuzione delle suite di test. 
+L'adozione di queste funzioni ha permesso di:
+\begin{itemize}
+    \item eliminare dipendenze da stati residui di esecuzioni precedenti, garantendo l'isolamento tra i test;
+    \item disporre di un dataset noto e controllato su cui validare in modo deterministico i risultati attesi;
+    \item ridurre il tempo necessario per la preparazione manuale dei dati di test, automatizzando la fase di setup dell'ambiente.
+\end{itemize}
