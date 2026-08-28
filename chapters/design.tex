@@ -8,6 +8,7 @@ Per alcune delle decisioni prese vengono inoltre discusse le alternative valutat
 \label{sec:ipversion-handler}
 Il servizio di downstream deve essere in grado di gestire in maniera trasparente le due versioni del protocollo \ac{IP} (IPv4 e IPv6), evitando che la logica applicativa debba occuparsi esplicitamente delle differenze tra i due protocolli.
 Le operazioni specifiche di ciascuna versione vengono quindi delegate a una classe dedicata che, sfruttando il pattern \emph{strategy} \cite[pp.~315--323]{gamma1994design} (\Cref{fig:icmp-stretegy}), incapsula le diverse implementazioni necessarie all'invio del messaggio \ac{ICMP} in base alla versione del protocollo \ac{IP} utilizzata.
+
 Rispetto a una soluzione basata su costrutti condizionali (\texttt{if}/\texttt{else} o \texttt{switch}) sparsi nel codice, questa scelta consente di aggiungere in futuro il supporto a nuove versioni del protocollo, o nuove modalità di invio, senza dover modificare il codice client che utilizza tali classi, rispettando così il principio open/closed.
 \begin{figure}
     \centering
@@ -22,9 +23,10 @@ Rispetto a una soluzione basata su costrutti condizionali (\texttt{if}/\texttt{e
 L'upstream aggregator ha il compito di eseguire il fan-out\sidenote{Il fan-out si riferisce all'atto di distribuire le informazioni da una singola fonte verso più destinazioni.} verso gli host selezionati.
 Poiché il numero di server da interrogare potrebbe aumentare notevolmente nel tempo, non è possibile eseguire le chiamate in sequenza: con un numero elevato di interrogazioni, l'esecuzione verrebbe inevitabilmente interrotta dal timeout imposto. È quindi necessario eseguire le chiamate in parallelo.
 L'operazione è di tipo \emph{embarrassingly parallel} \cite{mattson2004patterns}, poiché ogni singola esecuzione è indipendente dalle altre e non richiede alcuna forma di sincronizzazione tra i vari task.
+
 Tuttavia, senza alcuna limitazione, il sistema potrebbe consumare una quantità eccessiva di risorse al crescere del numero di server da interrogare, violando il vincolo introdotto nella \cref{sec:limitazioni}.
 Per questo motivo è stato scelto di limitare il numero di unità di esecuzione concorrenti sfruttando il \emph{bounded parallelism pattern} attraverso un meccanismo di semafori e monitor, evitando il degrado della rete e un utilizzo eccessivo delle risorse macchina.
-Sfruttando tale pattern, l'esecuzione del fan-out viene eseguito secondo il paradigma di programmazione parallela \emph{master-worker} come in figura \cref{fig:master-worker}, in cui un'unità coordinatrice (\emph{master}) distribuisce i task alle unità esecutrici (\emph{worker}), garantendo così il rispetto del vincolo di parallelismo imposto.
+Sfruttando tale pattern, l'esecuzione del fan-out viene eseguita secondo il paradigma di programmazione parallela \emph{master-worker} come in figura \cref{fig:master-worker}, in cui un'unità coordinatrice (\emph{master}) distribuisce i task alle unità esecutrici (\emph{worker}), garantendo così il rispetto del vincolo di parallelismo imposto.
 \begin{figure}
     \centering
     \includegraphics[width=.8\linewidth,trim=0 0 0 2cm]{figures/master-worker.pdf}

@@ -4,11 +4,18 @@ Il presente capitolo introduce il contesto tecnico e infrastrutturale all'intern
 In particolare, viene descritta l'architettura legacy del servizio di misurazione della latenza attualmente in produzione, sviluppato per supportare le esigenze operative di \emph{FlashStart Cloud}.
 La comprensione approfondita di tale architettura, delle sue componenti e delle interazioni tra di esse costituisce un prerequisito indispensabile per individuare i limiti del sistema esistente e per motivare le scelte progettuali presentate nei capitoli successivi.
 
-Di seguito viene descritta nel dettaglio l'architettura a tre componenti --- Upstream Orchestrator, Downstream e route PHP --- che costituisce il punto di partenza dell'analisi condotta in questo lavoro.
+Di seguito viene descritta nel dettaglio l'architettura a tre componenti: Upstream Orchestrator, Downstream e route PHP, che costituisce il punto di partenza dell'analisi condotta in questo lavoro.
 
 Il servizio di misurazione della latenza (di seguito \emph{latency service}) adotta un'architettura distribuita a tre componenti disaccoppiati, ciascuno responsabile di una fase distinta del processo di raccolta, aggregazione ed esposizione dei dati.
 Le componenti comunicano tra loro in sequenza tramite chiamate \ac{HTTP}, secondo un modello \emph{orchestrator--worker} ricorrente nei sistemi progettati per il monitoraggio distribuito di infrastrutture di rete su larga scala.
-La Figura~\ref{fig:legacy-architecture} illustra schematicamente il flusso di comunicazione tra le tre componenti; di seguito ciascuna di esse viene descritta in dettaglio.
+La Figura~\ref{fig:legacy-architecture} illustra schematicamente l'architettura delle tre componenti; di seguito ciascuna di esse viene descritta in dettaglio.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=1\linewidth]{figures/legacy-architecture.pdf}
+    \caption[Diagramma dell'Architettura del servizio legacy.]{In ogni firewall della rete sono presenti uno o più servizi di downstream.}
+    \label{fig:legacy-architecture}
+\end{figure}
 
 \section{Upstream Orchestrator}
 \label{section:upstream-orchestrator}
@@ -83,10 +90,3 @@ Complessivamente, il flusso di una richiesta attraversa le tre componenti descri
     \item l'Upstream Orchestrator aggrega e riordina i risultati ricevuti;
     \item il risultato finale viene restituito alla route PHP, che integra la risposta con informazioni aggiuntive e la espone al client.
 \end{enumerate}
-
-\begin{figure}
-    \centering
-    \includegraphics[width=.8\linewidth]{figures/legacy-architecture.pdf}
-    \caption[Diagramma dell'Architettura del servizio legacy.]{In ogni firewall della rete sono presenti uno o più servizi di downstream.}
-    \label{fig:legacy-architecture}
-\end{figure}
