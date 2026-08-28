@@ -49,7 +49,6 @@
 
 \let\oldbibliography\bibliography
 \renewcommand{\bibliography}[1]{
-    \addcontentsline{toc}{part}{}
     \addcontentsline{toc}{chapter}{\bibname}
     \oldbibliography{#1}
 }
