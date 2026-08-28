@@ -5,19 +5,21 @@ Il presente documento descrive le attività svolte durante il periodo di tirocin
 
 FlashStart è una azienda che da oltre 20 anni protegge gli utenti nel mondo digitale con soluzioni di sicurezza informatica attraverso il filtraggio dei contenuti basato su \ac{DNS} e intelligenza artificiale.
 L'azienda fornisce filtraggio dei contenuti per utenti singoli o organizzazioni di ogni dimensione.
-FlashStart opera su una rete anycast globale (aggiungi definizione) composta da più di 160 nodi distribuiti strategicamente in tutti i continenti, progettata per garantire elevata disponibilità, latenza minima e continuità operativa anche in caso di interruzioni o picchi di traffico.
+FlashStart opera su una rete anycast\footnote{Anycast è una metodologia di indirizzamento di rete dove le richieste vengono indirizzate ad una varietà di diversi nodi. Tipicamente si indirizza il traffico in entrata al server più vicino che ha la capacità di processare la richiesta efficientemente.} globale composta da più di 160 nodi distribuiti strategicamente in tutti i continenti, progettata per garantire elevata disponibilità, latenza minima e continuità operativa anche in caso di interruzioni o picchi di traffico.
 
 A partire dal 2026 FlashStart ha iniziato il più grande redesign dell'azienda, spostandosi da una applicazione con architettura monolitica ad un applicativo moderno con una architettura basata su microservizi altamente scalabili.
 In questo documento si farà riferimento ai due applicativi come: \textit{FlashStart Cloud}, il sistema attualmente in uso ma destinato alla dismissione, e \textit{FlashStart Internet Protection 2026}, la soluzione individuata per la sua sostituzione.
 
 Nel seguito della trattazione, per semplicità, si farà riferimento al nuovo sistema come \textit{FlashStart 2026}.
 
+\paragraph{Contributo della tesi}
 Lo strumento di controllo latenza è uno strumento fondamentale per il Network Admin in quanto consente di calcolare a priori la latenza di risposta del \ac{DNS} (in millisecondi) che l'utilizzatore avrà utilizzando il servizio di protezione della navigazione.
 
 Essendo la protezione FlashStart ``at \ac{DNS} level'', una bassa latenza (tipicamente inferiore ai 10ms) è essenziale per garantire sicurezza e fluidità della navigazione in Internet allo stesso tempo.
 
 Nello strumento vengono anche stimati gli eventuali nodi alternativi in caso di problematiche (outage) del nodo preferenziale (best latency path). Essendo la rete basata su \ac{BGP} Anycast, gli indirizzi \ac{IP} del servizio di \ac{DNS} sicuro sono presenti (annunciati) in ogni datacenter ed in caso di criticità del nodo principale, automaticamente l'utilizzatore continuerà a navigare filtrato e protetto su un nodo alternativo, con una latenza leggermente superiore.
-
+Il contributo principale di questa tesi risiede nella migrazione del servizio di latenza dal precedente applicativo, originariamente sviluppato utilizzando i linguaggi PHP e Python, verso una nuova piattaforma progettata secondo criteri più moderni e strutturati.
+Tale processo di migrazione non si è limitato alla semplice riscrittura del codice esistente, ma ha comportato una revisione approfondita dell'architettura sottostante, con l'obiettivo di superare i limiti riscontrati nella soluzione originaria. In particolare, il lavoro svolto ha permesso di conseguire un netto miglioramento sotto tre aspetti fondamentali: l'affidabilità del sistema, intesa come capacità di garantire un funzionamento stabile e resiliente anche in condizioni di carico elevato; l'efficienza operativa, in termini di ottimizzazione delle risorse computazionali e riduzione dei tempi di risposta; e infine l'usabilità, sia dal punto di vista degli utenti finali sia da quello degli sviluppatori chiamati a mantenere ed estendere il sistema nel tempo.
 \paragraph{Struttura dei Capitoli}
 
 \begin{description}
@@ -29,7 +31,7 @@ Nello strumento vengono anche stimati gli eventuali nodi alternativi in caso di 
     
     \item[\Cref{chap:development} -- Sviluppo:] affronta nel dettaglio la fase realizzativa, argomentando la selezione dei linguaggi di programmazione impiegati e descrivendo lo sviluppo analitico delle varie componenti del sistema.
     
-    \item[\Cref{chap:deployment} Deployment e integrazione:] approfondisce le strategie e le decisioni operative adottate per il dispiegamento (\emph{deployment}) e l'integrazione delle nuove componenti all'interno dell'infrastruttura di rete e del nuovo applicativo.
+    \item[\Cref{chap:deployment} -- Deployment e integrazione:] approfondisce le strategie e le decisioni operative adottate per il dispiegamento (\emph{deployment}) e l'integrazione delle nuove componenti all'interno dell'infrastruttura di rete e del nuovo applicativo.
     
     \item[\Cref{chap:results} -- Validazione e test:] presenta le prove sperimentali e i test condotti sul campo al fine di verificare la correttezza, la robustezza e le prestazioni dei componenti realizzati.
     

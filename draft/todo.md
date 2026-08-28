@@ -1,4 +1,3 @@
 - Information flow diagram
-- Anycast network definition
 - revisiona background chapter
 - revisiona design chapter
