@@ -89,17 +89,32 @@ Dalla versione 1.24 in poi di go la variabile assume di default il numero totale
 Per lo sviluppo del frontend è stato coinvolto un esperto di user experience, con l'obiettivo di mantenere un elevato standard di usabilità e garantire coerenza di stile con il resto dell'applicativo. Questo coinvolgimento ha permesso di affrontare la progettazione non solo dal punto di vista funzionale, ma anche tenendo conto dei principi di design consolidati, evitando così di introdurre incoerenze visive o pattern di interazione poco intuitivi per l'utente finale.
 
 La progettazione è partita dall'analisi del design della vecchia pagina, individuando punti di forza e criticità dell'interfaccia esistente. L'obiettivo della nuova versione era quello di riproporre le stesse funzionalità in maniera più chiara e pulita, semplificando la fruizione delle informazioni senza però stravolgere le abitudini d'uso già acquisite dagli utenti. La figura~\ref{fig:wireframe} illustra il design generale che si intendeva riprodurre, evidenziando la disposizione degli elementi principali e il flusso di interazione previsto.
+\begin{figure}
+    \centering
+    \includegraphics[width=1\linewidth]{figures/ui-wireframe.pdf}
+    \caption[Wireframe dell'interfaccia utente]{Struttura generale delle informazioni da trasmettere attraverso l'interfaccia obiettivo, realizzata sulla base della struttura della piattaforma legacy.}
+    \label{fig:wireframe}
+\end{figure}
 
-% \cref{fig:wireframe}
-% [wireframe del modello]
+Inizialmente è stato proposto un design semplice, che riproponeva sostanzialmente la struttura della pagina precedente, limitandosi a modificarne lo stile grafico per renderlo più moderno e in linea con gli standard visivi attuali. Questa prima iterazione illustrata in figura \cref{fig:intermediate-design}, pur rappresentando un miglioramento estetico, non introduceva sostanziali cambiamenti nella disposizione dei contenuti né nell'esperienza d'uso complessiva.
 
-Inizialmente è stato proposto un design semplice, che riproponeva sostanzialmente la struttura della pagina precedente, limitandosi a modificarne lo stile grafico per renderlo più moderno e in linea con gli standard visivi attuali. Questa prima iterazione, pur rappresentando un miglioramento estetico, non introduceva sostanziali cambiamenti nella disposizione dei contenuti né nell'esperienza d'uso complessiva.
+\begin{figure}
+    \centering
+    \includegraphics[width=1\linewidth]{figures/intermediate-design.pdf}
+    \caption[Primo redesign dell'interfaccia]{Primo redesign dell'interfaccia, con un semplice restyling grafico della piattaforma legacy.}
+    \label{fig:intermediate-design}
+\end{figure}
 
-% [mockup iniziale]
 
-Dopo l'intervento dell'esperto UX, il mockup si è evoluto significativamente: da un lato mantenendo coerente lo stile visivo con il resto della piattaforma FlashStart 2026, dall'altro introducendo una struttura più flessibile e modulare, pensata per accogliere eventuali evoluzioni future senza richiedere una riprogettazione radicale dell'interfaccia. Questo processo iterativo, frutto di diversi cicli di revisione e confronto, ha portato alla definizione del design finale mostrato in figura~\ref{fig:mockup-finale}.
+Dopo l'intervento dell'esperto UX, il mockup si è evoluto significativamente: da un lato mantenendo coerente lo stile visivo con il resto della piattaforma FlashStart 2026, dall'altro introducendo una struttura più flessibile e modulare, pensata per accogliere eventuali evoluzioni future senza richiedere una riprogettazione radicale dell'interfaccia. Questo processo iterativo, frutto di diversi cicli di revisione e confronto, ha portato alla definizione del design finale mostrato in figura~\ref{fig:final-mockup}.
 
-% [mockup finale]
+\begin{figure}
+    \centering
+    \includegraphics[width=1\linewidth]{figures/final-design.pdf}
+    \caption[Design finale]{Design finale dell'interfaccia utente, adottato nella versione rilasciata.}
+    \label{fig:final-mockup}
+\end{figure}
+
 
 Il design finale mostra i dati in maniera chiara e organizzata, con uno stile riadattato per integrarsi con il resto dell'applicazione. Oltre a migliorare la leggibilità e l'immediatezza delle informazioni presentate, la nuova struttura lascia spazio a possibili estensioni future, consentendo l'aggiunta di nuove funzionalità o sezioni senza compromettere la coerenza complessiva dell'interfaccia.
 \subsection{Scelta della libreria per la mappa}
