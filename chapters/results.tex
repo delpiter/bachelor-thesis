@@ -10,7 +10,7 @@ Per le componenti di upstream e downstream è stato privilegiato l'utilizzo degl
 La suite di test è stata progettata per coprire le principali cause di errore individuate in fase di analisi, con l'obiettivo di intercettare tempestivamente malfunzionamenti che potrebbero compromettere la stabilità dei servizi in produzione. Nello specifico, sono state individuate tre aree critiche su cui concentrare lo sforzo di testing:
 
 \subsection{Caricamento della configurazione}
-Sia il servizio di upstream che quello di downstream necessitano, in fase di avvio, del caricamento di un insieme di variabili d'ambiente indispensabili per il corretto funzionamento del sistema (ad esempio parametri di connessione, endpoint, credenziali o soglie operative). Sono stati quindi implementati test volti a verificare che:
+Come descritto in \cref{sec:variable-load} sia il servizio di upstream che quello di downstream necessitano del caricamento di un insieme di variabili d'ambiente indispensabili per il corretto funzionamento del sistema. Sono stati quindi implementati test volti a verificare che:
 \begin{itemize}
     \item in presenza di tutte le variabili richieste con valori validi, il servizio si avvii correttamente e le configurazioni vengano caricate secondo quanto atteso;
     \item in caso di assenza di una o più variabili obbligatorie, l'esecuzione del servizio venga interrotta in modo controllato, restituendo un messaggio di errore esplicativo;

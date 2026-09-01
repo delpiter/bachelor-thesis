@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="app.diagrams.net">
+  <diagram name="Page-1" id="ROI0VpU0v8p2iB4xt1WV">
+    <mxGraphModel dx="819" dy="607" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="Uok4CnKAm_KPHaWoEtK6-59" edge="1" parent="1" source="Uok4CnKAm_KPHaWoEtK6-1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;endArrow=diamondThin;endFill=0;endSize=14;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="Uok4CnKAm_KPHaWoEtK6-50">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="220" y="170" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="Uok4CnKAm_KPHaWoEtK6-1" parent="1" style="swimlane;fontStyle=0;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=0;marginBottom=0;html=1;whiteSpace=wrap;" value="ValueChecker&amp;lt;T&amp;gt;" vertex="1">
+          <mxGeometry height="50" width="170" x="140" y="210" as="geometry" />
+        </mxCell>
+        <mxCell id="Uok4CnKAm_KPHaWoEtK6-8" parent="Uok4CnKAm_KPHaWoEtK6-1" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;" value="+checkValue(value): T" vertex="1">
+          <mxGeometry height="20" width="170" y="30" as="geometry" />
+        </mxCell>
+        <mxCell id="Uok4CnKAm_KPHaWoEtK6-50" parent="1" style="swimlane;fontStyle=0;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=0;marginBottom=0;html=1;whiteSpace=wrap;" value="ConfigLoader" vertex="1">
+          <mxGeometry height="50" width="140" x="430" y="210" as="geometry" />
+        </mxCell>
+        <mxCell id="Uok4CnKAm_KPHaWoEtK6-57" parent="Uok4CnKAm_KPHaWoEtK6-50" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;" value="+load()" vertex="1">
+          <mxGeometry height="20" width="140" y="30" as="geometry" />
+        </mxCell>
+        <mxCell id="Uok4CnKAm_KPHaWoEtK6-62" parent="1" style="swimlane;fontStyle=0;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=0;marginBottom=0;html=1;whiteSpace=wrap;" value="BooleanChecker&amp;lt;Bool&amp;gt;" vertex="1">
+          <mxGeometry height="50" width="170" x="40" y="370" as="geometry" />
+        </mxCell>
+        <mxCell id="Uok4CnKAm_KPHaWoEtK6-63" parent="Uok4CnKAm_KPHaWoEtK6-62" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;" value="+checkValue(value): Bool" vertex="1">
+          <mxGeometry height="20" width="170" y="30" as="geometry" />
+        </mxCell>
+        <mxCell id="Uok4CnKAm_KPHaWoEtK6-74" edge="1" parent="1" source="Uok4CnKAm_KPHaWoEtK6-64" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;endArrow=none;endFill=0;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="230" y="290" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="Uok4CnKAm_KPHaWoEtK6-64" parent="1" style="swimlane;fontStyle=0;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=0;marginBottom=0;html=1;whiteSpace=wrap;" value="IntegerChecker&amp;lt;Int&amp;gt;" vertex="1">
+          <mxGeometry height="50" width="170" x="270" y="370" as="geometry" />
+        </mxCell>
+        <mxCell id="Uok4CnKAm_KPHaWoEtK6-65" parent="Uok4CnKAm_KPHaWoEtK6-64" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;" value="+checkValue(value): Int" vertex="1">
+          <mxGeometry height="20" width="170" y="30" as="geometry" />
+        </mxCell>
+        <mxCell id="Uok4CnKAm_KPHaWoEtK6-75" edge="1" parent="1" source="Uok4CnKAm_KPHaWoEtK6-66" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;endArrow=none;endFill=0;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="230" y="290" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="Uok4CnKAm_KPHaWoEtK6-66" parent="1" style="swimlane;fontStyle=0;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=0;marginBottom=0;html=1;whiteSpace=wrap;" value="AddressChecker&amp;lt;IpAddr&amp;gt;" vertex="1">
+          <mxGeometry height="50" width="170" x="500" y="370" as="geometry" />
+        </mxCell>
+        <mxCell id="Uok4CnKAm_KPHaWoEtK6-67" parent="Uok4CnKAm_KPHaWoEtK6-66" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;" value="+checkValue(value): IpAddr" vertex="1">
+          <mxGeometry height="20" width="170" y="30" as="geometry" />
+        </mxCell>
+        <mxCell id="Uok4CnKAm_KPHaWoEtK6-69" edge="1" parent="1" source="Uok4CnKAm_KPHaWoEtK6-62" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.529;entryY=1;entryDx=0;entryDy=0;entryPerimeter=0;endArrow=block;endFill=0;" target="Uok4CnKAm_KPHaWoEtK6-8">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="125" y="330" />
+              <mxPoint x="229.89" y="330" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

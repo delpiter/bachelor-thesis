@@ -49,6 +49,19 @@ Alcuni esempi di handler sono la gestione del logging strutturato e il disaster 
     \label{fig:http-middleware}
 \end{figure}
 
+
+\section{Caricamento delle variabili d'ambiente}
+\label{sec:variable-load}
+Sia il servizio di upstream che quello di downstream necessitano, in fase di avvio, del caricamento di un insieme di variabili d'ambiente indispensabili per il corretto funzionamento del sistema (ad esempio parametri di connessione, endpoint, credenziali o soglie operative).
+Il design adottato in figura \cref{fig:config-loader} centralizza il caricamento e la validazione della configurazione dell'applicazione a partire dalle variabile d'ambiente, restituendo un oggetto completamente validato oppure un errore esplicito al primo problema riscontrato.
+\begin{figure}
+    \centering
+    \includegraphics[width=1\linewidth]{figures/config-loader.pdf}
+    \caption[Caricatore delle configurazioni.]{Per il caricamento della configurazione vengono esposte una serie di classi, una per ciascun tipo di controllo da eseguire sulle varie variabili d'ambiente.}
+    \label{fig:config-loader}
+\end{figure}
+Ogni tipo di dato ha una funzione di validazione dedicata che restituisce il valore o un errore. Questo separa la logica di validazione dalla logica di orchestrazione del caricamento, rendendo ogni singolo controllo testabile in isolamento.
+
 \section{Integrazione con FlashStart 2026}
 \label{sec:app-integration-design}
 Si vuole permettere agli utenti di \emph{FlashStart 2026} di usufruire del servizio di latenza. È dunque necessario aggiungere un nuovo entrypoint all'interno dell'applicazione. Per mantenere una codebase coerente con il resto del sistema, sviluppato dagli altri developer dell'azienda, si è scelto di progettare il nuovo entrypoint seguendo il pattern M.V.C.
@@ -69,4 +82,10 @@ L'architettura risultante, illustrata in \cref{fig:fs-integration-mvc}, evidenzi
     \label{fig:fs-integration-mvc}
 \end{figure}
 
-Al fine di mantenere separata la logica applicativa dalla gestione di autenticazione e autorizzazione, questi ultimi vengono controllati tramite il pattern \emph{decorator} \cite[pp.~175--184]{gamma1994design}, sfruttando le strutture già presenti nella codebase dell'applicazione.
+\begin{figure}
+    \centering
+    \includegraphics[width=.9\linewidth]{figures/service-decorator.pdf}
+    \caption[Diagramma delle classi del pattern decorator.]{Pattern utilizzato dai vari servizi all'interno della piattaforma FlashStart 2026, permette di eseguire autenticazione, autorizzazione e logging strutturato senza modificare il codice interno del servizio, mantenendo separate le diverse logiche.}
+    \label{fig:service-decorator}
+\end{figure}
+Al fine di mantenere separata la logica applicativa dalla gestione di autenticazione e autorizzazione, questi ultimi vengono controllati tramite il pattern \emph{decorator} \cite[pp.~175--184]{gamma1994design} come illustrato in figura \cref{fig:service-decorator}, sfruttando le strutture già presenti nella codebase dell'applicazione.

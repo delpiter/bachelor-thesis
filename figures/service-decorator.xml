@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="app.diagrams.net">
+  <diagram name="Page-1" id="ROI0VpU0v8p2iB4xt1WV">
+    <mxGraphModel dx="1131" dy="838" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="Uok4CnKAm_KPHaWoEtK6-1" parent="1" style="swimlane;fontStyle=0;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=0;marginBottom=0;html=1;whiteSpace=wrap;" value="LatencyService" vertex="1">
+          <mxGeometry height="50" width="140" x="344" y="280" as="geometry" />
+        </mxCell>
+        <mxCell id="Uok4CnKAm_KPHaWoEtK6-8" parent="Uok4CnKAm_KPHaWoEtK6-1" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;" value="getData()" vertex="1">
+          <mxGeometry height="20" width="140" y="30" as="geometry" />
+        </mxCell>
+        <mxCell id="Uok4CnKAm_KPHaWoEtK6-9" parent="1" style="swimlane;fontStyle=0;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=0;marginBottom=0;html=1;whiteSpace=wrap;" value="ServiceDecorator" vertex="1">
+          <mxGeometry height="78" width="170" x="329" y="380" as="geometry" />
+        </mxCell>
+        <mxCell id="Uok4CnKAm_KPHaWoEtK6-12" parent="Uok4CnKAm_KPHaWoEtK6-9" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontColor=#808080;whiteSpace=wrap;" value="- wrappee: Service" vertex="1">
+          <mxGeometry height="20" width="170" y="30" as="geometry" />
+        </mxCell>
+        <mxCell id="Uok4CnKAm_KPHaWoEtK6-14" parent="Uok4CnKAm_KPHaWoEtK6-9" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;" value="" vertex="1">
+          <mxGeometry height="8" width="170" y="50" as="geometry" />
+        </mxCell>
+        <mxCell id="Uok4CnKAm_KPHaWoEtK6-16" parent="Uok4CnKAm_KPHaWoEtK6-9" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;" value="+execute()" vertex="1">
+          <mxGeometry height="20" width="170" y="58" as="geometry" />
+        </mxCell>
+        <mxCell id="Uok4CnKAm_KPHaWoEtK6-19" edge="1" parent="1" source="Uok4CnKAm_KPHaWoEtK6-12" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;endArrow=open;endFill=0;endSize=6;startArrow=diamondThin;startFill=0;startSize=14;" target="Uok4CnKAm_KPHaWoEtK6-1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Uok4CnKAm_KPHaWoEtK6-21" parent="1" style="shape=note2;boundedLbl=1;whiteSpace=wrap;html=1;size=18;verticalAlign=top;align=center;" value="wrappee.getData()" vertex="1">
+          <mxGeometry height="44" width="120" x="590" y="430" as="geometry" />
+        </mxCell>
+        <mxCell id="Uok4CnKAm_KPHaWoEtK6-22" edge="1" parent="1" source="Uok4CnKAm_KPHaWoEtK6-21" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.476;entryY=0.6;entryDx=0;entryDy=0;entryPerimeter=0;endArrow=oval;endFill=0;" target="Uok4CnKAm_KPHaWoEtK6-16">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="590" y="450.01" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="Uok4CnKAm_KPHaWoEtK6-47" edge="1" parent="1" source="Uok4CnKAm_KPHaWoEtK6-23" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;endArrow=block;endFill=0;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="210.02" y="510.02" />
+              <mxPoint x="410.02" y="510.02" />
+            </Array>
+            <mxPoint x="410" y="460" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="Uok4CnKAm_KPHaWoEtK6-23" parent="1" style="swimlane;fontStyle=0;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=0;marginBottom=0;html=1;whiteSpace=wrap;" value="Authentication" vertex="1">
+          <mxGeometry height="50" width="140" x="140" y="540" as="geometry" />
+        </mxCell>
+        <mxCell id="Uok4CnKAm_KPHaWoEtK6-30" parent="Uok4CnKAm_KPHaWoEtK6-23" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;" value="+execute()" vertex="1">
+          <mxGeometry height="20" width="140" y="30" as="geometry" />
+        </mxCell>
+        <mxCell id="Uok4CnKAm_KPHaWoEtK6-48" edge="1" parent="1" source="Uok4CnKAm_KPHaWoEtK6-31" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;endArrow=none;endFill=0;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="410" y="500" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="Uok4CnKAm_KPHaWoEtK6-31" parent="1" style="swimlane;fontStyle=0;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=0;marginBottom=0;html=1;whiteSpace=wrap;" value="Authorization" vertex="1">
+          <mxGeometry height="50" width="140" x="340" y="540" as="geometry" />
+        </mxCell>
+        <mxCell id="Uok4CnKAm_KPHaWoEtK6-38" parent="Uok4CnKAm_KPHaWoEtK6-31" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;" value="+execute()" vertex="1">
+          <mxGeometry height="20" width="140" y="30" as="geometry" />
+        </mxCell>
+        <mxCell id="Uok4CnKAm_KPHaWoEtK6-49" edge="1" parent="1" source="Uok4CnKAm_KPHaWoEtK6-39" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;endArrow=none;endFill=0;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="610.02" y="510.02" />
+              <mxPoint x="410.02" y="510.02" />
+            </Array>
+            <mxPoint x="410" y="490" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="Uok4CnKAm_KPHaWoEtK6-39" parent="1" style="swimlane;fontStyle=0;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=0;marginBottom=0;html=1;whiteSpace=wrap;" value="Logging" vertex="1">
+          <mxGeometry height="50" width="140" x="540" y="540" as="geometry" />
+        </mxCell>
+        <mxCell id="Uok4CnKAm_KPHaWoEtK6-46" parent="Uok4CnKAm_KPHaWoEtK6-39" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;" value="+execute()" vertex="1">
+          <mxGeometry height="20" width="140" y="30" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
