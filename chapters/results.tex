@@ -60,3 +60,34 @@ L'adozione di queste funzioni ha permesso di:
     \item disporre di un dataset noto e controllato su cui validare in modo deterministico i risultati attesi;
     \item ridurre il tempo necessario per la preparazione manuale dei dati di test, automatizzando la fase di setup dell'ambiente.
 \end{itemize}
+\section{Deployment}
+\subsection{Infrastruttura}
+Dopo una analisi della semantica delle informazioni fornite da questo servizio, insieme al team di sviluppo si è giunti alla conclusione che nessun microservizio attualmente presente all'interno della piattaforma FlashStart 2026 sarebbe stato adatto al contenimento di questa nuova API, è stata quindi necessaria la creazione di un nuovo microservizio: \emph{infrastructure}.
+
+Il nuovo microservizio servirà per tutte quelle nuove feature che implementano un qualsiasi tipo di strumento di supporto all'utilizzo dell'applicazione.
+Per la creazione del nuovo microservizio è stato necessario configurare diversi aspetti:
+\begin{itemize}
+    \item \emph{Ambiente di testing}: un ambiente di testing automatico per l'esecuzione dei test del nuovo microservizio.
+    \item \emph{Database}: un database PostgreSQL specifico al microservizio utilizzato contenente le informazioni necessarie al funzionamento dei vari servizi infrastructure.
+    \item \emph{Dispiegamento}: due dockerfile, uno per l'ambiente di development e testing e uno per l'ambiente di produzione, necessario per il dispiegamento del nuovo microservizio all'interno di un cluster kuberneetes.
+\end{itemize}
+
+\subsection{Multistage dockerfile}
+Per il dispiegamento dei servizi di downstream e upstream all'interno dei server della rete anycast sono stati creati dei dockerfile ad hoc contenenti i file binari compilati dei due servizi.
+\lstinputlisting[
+    float,
+    language=Dockerfile,
+    label={lst:multistage-dockerfile},
+    caption={[Multistage Dockerfile] Dockerfile a stage multipli utilizzato per il dispiegamento sia del servizio di downstream che dell'upstream aggregator. In particolare questo dockerfile è utilizzato dal downstream, si può notare dall'aggiunta delle ``network capabilities'', necessarie per l'esecuzione del ping.}
+    ]{listings/Dockerfile}
+Per evitare di caricare sui server codice binario inutilizzato come il compilatore del linguaggio, è stato creato il dockerfile multistage riportato nel \cref{lst:multistage-dockerfile}.
+
+Il file è composto da due stage:
+\begin{itemize}
+    \item Un primo stage che scarica le librerie necessarie e compila i codici sorgenti in un unico file binaro eseguibile;
+    \item Un secondo stage che, utilizzando una immagine leggera come \\ \texttt{debian:bookworm-slim}, elimina qualsiasi file non necessario e successivamente copia il file binario creato al primo stage, minimizzando le risorse necessarie per l'esecuzione del servizio.
+\end{itemize}
+
+A differenza del vecciho downstream, dispiegato su ciascun \ac{DNS} resolver (multipli container in una sola macchina), il nuovo servizio verrà direttamente inserito all'interno sistema bare metal come servizio indipendente.
+
+Questa modifica ha come conseguenza due miglioramenti: minore consumo di memoria in una singola macchina dato da inutili copie del servizio e maggiore efficienza nel processo di aggregazione, in quanto il numero di server da interrogare è notevolmente ridotto, viene inoltre rimossa la necessità di filtrare indirizzi duplicati in quanto ogni macchina viene interrogata una volta sola.
