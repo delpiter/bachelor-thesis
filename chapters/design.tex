@@ -53,7 +53,7 @@ Alcuni esempi di handler sono la gestione del logging strutturato e il disaster 
 \section{Caricamento delle variabili d'ambiente}
 \label{sec:variable-load}
 Sia il servizio di upstream che quello di downstream necessitano, in fase di avvio, del caricamento di un insieme di variabili d'ambiente indispensabili per il corretto funzionamento del sistema (ad esempio parametri di connessione, endpoint, credenziali o soglie operative).
-Il design adottato in figura \cref{fig:config-loader} centralizza il caricamento e la validazione della configurazione dell'applicazione a partire dalle variabile d'ambiente, restituendo un oggetto completamente validato oppure un errore esplicito al primo problema riscontrato.
+Il design adottato in figura \cref{fig:config-loader} centralizza il caricamento e la validazione della configurazione delle singole componenti dell'applicazione a partire dalle variabile d'ambiente, restituendo un oggetto completamente validato oppure un errore esplicito al primo problema riscontrato.
 \begin{figure}
     \centering
     \includegraphics[width=1\linewidth]{figures/config-loader.pdf}
