@@ -39,11 +39,11 @@
 \begin{abstract}	
 Il progetto è incentrato sulla modernizzazione architetturale e sul re-engineering dei 
 servizi di misurazione della latenza in una rete anycast. Il sistema preesistente, 
-basato su architettura PHP/Apache e script di fan-out Python, soffriva di limitazioni prestazionali, elevato overhead di CPU/memoria, una bassa affidabilità di risposta ed eccessiva rigidità nella gestione dell'I/O concorrente.
+basato su architettura PhP/Apache e script di fan-out Python, soffriva di limitazioni prestazionali, elevato overhead di CPU/memoria, una bassa affidabilità di risposta ed eccessiva rigidità nella gestione dell'I/O concorrente.
 
 Il progetto ha coinvolto la riscrittura di due sotto-servizi principali. Il servizio di 
 downstream, incaricato di calcolare la latenza tra il server stesso e la macchina 
-specificata in input, originariamente scritto in PHP ed è stato riprogettato in Go, 
+specificata in input, originariamente scritto in PhP ed è stato riprogettato in Go, 
 adottando i principi della Clean Architecture e un design basato su design pattern, massimizzando l'affidabilità della risposta.
 Il servizio di upstream, responsabile dell'aggregazione dei dati raccolti dalle interrogazioni dei server di downstream, era originariamente scritto in Python ed è stato anch'esso riscritto in Go, sfruttando il modello di concorrenza nativo del linguaggio (goroutine e channel) per superare la rigidità nella gestione dell'I/O concorrente riscontrata nel sistema preesistente.
 Infine è stata sviluppato il codice per l'integrazione dei servizi backend con la piattaforma aziendale.

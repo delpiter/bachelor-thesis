@@ -9,7 +9,7 @@ Per rispettare i requisiti del problema (vedi \cref{sec:limitazioni}) è stato s
 La scelta è stata presa secondo i seguenti criteri:
 
 \begin{itemize}
-    \item \textbf{Compilazione nativa}: a differenza dei linguaggi usati in precedenza (\texttt{php} e \texttt{python}), Go è un linguaggio compilato. Questo permette di ottenere un file binario eseguibile nativamente dal sistema operativo, senza la necessità di un interprete o di una macchina virtuale a runtime, con conseguenti vantaggi in termini di prestazioni e tempi di avvio del servizio.
+    \item \textbf{Compilazione nativa}: a differenza dei linguaggi usati in precedenza (\texttt{PhP} e \texttt{python}), Go è un linguaggio compilato. Questo permette di ottenere un file binario eseguibile nativamente dal sistema operativo, senza la necessità di un interprete o di una macchina virtuale a runtime, con conseguenti vantaggi in termini di prestazioni e tempi di avvio del servizio.
     
     \item \textbf{Binari statici}: a differenza di \texttt{C} e \texttt{C++}, i binari prodotti dal compilatore di Go sono file statici, ovvero includono al loro interno tutte le librerie necessarie all'esecuzione. Questo elimina la dipendenza da librerie condivise installate sul sistema (\emph{dependency hell}) e semplifica notevolmente il dispiegamento del servizio, rendendolo particolarmente adatto a essere containerizzato (ad esempio tramite immagini Docker minimali basate su \texttt{scratch} o \texttt{alpine}) e distribuito su ambienti eterogenei senza dover gestire l'installazione di un runtime specifico.
     
