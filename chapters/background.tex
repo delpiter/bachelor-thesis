@@ -75,18 +75,37 @@ La terza componente del sistema è costituita da una \emph{route} implementata i
 La route agisce come livello di presentazione: riceve le richieste provenienti dal client, le inoltra all'Upstream Orchestrator e restituisce al chiamante i dati di latenza aggregati e ordinati, in un formato adatto al consumo da parte dell'applicazione.
 
 Questo script php riceve i dati dall'upstream orchestrator e inserisce informazioni aggiuntive riguardanti i singoli server interrogati.
-Ha inoltre una funzione di filtraggio delle risposte duplicate, causate da un dispiegamento di più \ac{DNS} resolver in un unico server fisico.
+\lstinputlisting[
+    float,
+    language=php,
+    label={lst:route-inefficiencies},
+    caption={[Implementazione legacy della route php.] Per ciascun elemento ritornato dall'upstream aggregator viene aperta una connessione al database ed eseguite due query complesse influendo notevolmente sul tempo di esecuzione del servizio.}
+    ]{listings/route.php}
+Lo script contiene alcune inefficienze che impattano sulle prestazioni generali del servizio.
+\begin{itemize}
+    \item \emph{Filtraggio delle risposte}: lo script include una funzione per filtrare le risposte duplicate, dovute alla presenza di più resolver \ac{DNS} sullo stesso server fisico.
+    \item \emph{Operazioni onerose}: per ciascun risultato vengono eseguite diverse operazioni onerose, riportate nel \cref{lst:route-inefficiencies}, molte delle quali si rivelano inutili a causa del successivo filtraggio dei duplicati.
+    \item \emph{Ordinamento ridondante}: il risultato ottenuto viene nuovamente ordinato, nonostante fosse stato già eseguito dal componente di upstream.
+\end{itemize}
+
 
 \section{Flusso di comunicazione end-to-end}
 \label{section:flusso-comunicazione}
 
-Complessivamente, il flusso di una richiesta attraversa le tre componenti descritte secondo la seguente sequenza:
+Complessivamente, il flusso di una richiesta attraversa le tre componenti descritte secondo la seguente sequenza (\Cref{fig:information-flow}):
 
 \begin{enumerate}
     \item Il client invoca la route PHP esposta da FlashStart Cloud;
     \item la route PHP inoltra la richiesta all'Upstream Orchestrator;
-    \item l'Upstream Orchestrator recupera la lista dei server attivi e distribuisce, tramite chiamate HTTP, le richieste di misurazione ai relativi componenti Downstream dislocati sulla rete anycast;
+    \item l'Upstream Orchestrator recupera la lista dei server attivi e distribuisce, tramite chiamate \ac{HTTP}, le richieste di misurazione ai relativi componenti Downstream dislocati sulla rete anycast;
     \item ciascun Downstream esegue la misurazione della latenza verso la macchina target e restituisce il risultato all'Orchestrator;
     \item l'Upstream Orchestrator aggrega e riordina i risultati ricevuti;
     \item il risultato finale viene restituito alla route PHP, che integra la risposta con informazioni aggiuntive e la espone al client.
 \end{enumerate}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=1\linewidth]{figures/information-flow.pdf}
+    \caption[Diagramma di sequenza del latency service.]{Flusso delle informazioni partendo dalla richiesta del client fino alla visualizzazione dell'informazione ottenuta sull'interfaccia.}
+    \label{fig:information-flow}
+\end{figure}
