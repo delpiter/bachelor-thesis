@@ -8,7 +8,7 @@ Di seguito viene descritta nel dettaglio l'architettura a tre componenti: Upstre
 
 Il servizio di misurazione della latenza (di seguito \emph{latency service}) adotta un'architettura distribuita a tre componenti disaccoppiati, ciascuno responsabile di una fase distinta del processo di raccolta, aggregazione ed esposizione dei dati.
 Le componenti comunicano tra loro in sequenza tramite chiamate \ac{HTTP}, secondo un modello \emph{orchestrator--worker} ricorrente nei sistemi progettati per il monitoraggio distribuito di infrastrutture di rete su larga scala.
-La Figura~\ref{fig:legacy-architecture} illustra schematicamente l'architettura delle tre componenti; di seguito ciascuna di esse viene descritta in dettaglio.
+La \cref{fig:legacy-architecture} illustra schematicamente l'architettura delle tre componenti; di seguito ciascuna di esse viene descritta in dettaglio.
 
 \begin{figure}
     \centering
@@ -23,10 +23,10 @@ La Figura~\ref{fig:legacy-architecture} illustra schematicamente l'architettura 
 L'\emph{Upstream Orchestrator} rappresenta il componente centrale del sistema ed è localizzato all'interno del server principale dell'infrastruttura. Le sue responsabilità principali sono le seguenti:
 
 \begin{itemize}
-    \item \emph{Discovery dei server attivi}: recupera dinamicamente la lista dei server della rete da interrogare ai fini della misurazione della latenza, garantendo che solo i nodi effettivamente operativi vengano coinvolti nel processo di raccolta;
-    \item \emph{Distribuzione delle richieste}: inoltra, tramite chiamate \ac{HTTP}, le richieste di misurazione verso ciascun nodo Downstream individuato nella fase precedente;
-    \item \emph{Aggregazione dei risultati}: raccoglie le risposte provenienti dai singoli nodi Downstream, effettuando l'unione dei dati parziali in un'unica struttura coerente;
-    \item \emph{Riordinamento}: applica un criterio di ordinamento ai risultati aggregati per valore di latenza crescente, in modo da restituire un output immediatamente consultabile dal componente che effettua la richiesta finale.
+    \item \emph{Discovery dei server attivi}: recupero dinamico della lista dei server della rete da interrogare ai fini della misurazione della latenza, garantendo che solo i nodi effettivamente operativi vengano coinvolti nel processo di raccolta;
+    \item \emph{Distribuzione delle richieste}: inoltro, tramite chiamate \ac{HTTP}, delle richieste di misurazione verso ciascun nodo Downstream individuato nella fase precedente;
+    \item \emph{Aggregazione dei risultati}: raccolta delle risposte provenienti dai singoli nodi Downstream, effettuando l'unione dei dati parziali in un'unica struttura coerente;
+    \item \emph{Riordinamento}: riordinamento dei risultati aggregati per valore di latenza crescente, in modo da restituire un output immediatamente consultabile dal componente che effettua la richiesta finale.
 \end{itemize}
 
 Essendo un componente unico e centralizzato, l'Upstream Orchestrator costituisce, come si vedrà, anche un potenziale un collo di bottiglia in termini di prestazioni al crescere del numero di nodi da interrogare.
@@ -85,14 +85,14 @@ Lo script contiene alcune inefficienze che impattano sulle prestazioni generali 
 \begin{itemize}
     \item \emph{Filtraggio delle risposte}: lo script include una funzione per filtrare le risposte duplicate, dovute alla presenza di più resolver \ac{DNS} sullo stesso server fisico.
     \item \emph{Operazioni onerose}: per ciascun risultato vengono eseguite diverse operazioni onerose, riportate nel \cref{lst:route-inefficiencies}, molte delle quali si rivelano inutili a causa del successivo filtraggio dei duplicati.
-    \item \emph{Ordinamento ridondante}: il risultato ottenuto viene nuovamente ordinato, nonostante fosse stato già eseguito dal componente di upstream.
+    \item \emph{Ordinamento ridondante}: il risultato ottenuto viene nuovamente ordinato, nonostante fosse stato già eseguito dalla componente di upstream.
 \end{itemize}
 
 
 \section{Flusso di comunicazione end-to-end}
 \label{section:flusso-comunicazione}
 
-Complessivamente, il flusso di una richiesta attraversa le tre componenti descritte secondo la seguente sequenza (\Cref{fig:information-flow}):
+Complessivamente, il flusso di una richiesta attraversa le tre componenti descritte secondo la seguente sequenza e illustrato in \cref{fig:information-flow}:
 
 \begin{enumerate}
     \item Il client invoca la route PhP esposta da FlashStart Cloud;

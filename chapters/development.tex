@@ -48,8 +48,6 @@ Questo wrapper risolve il problema della fragilità del risultato, poiché il pa
 Il linguaggio Go mette a disposizione due costrutti nativi per la gestione di routine concorrenti: le ``goroutine'' e i ``canali'' (\texttt{chan}) strutture dati in grado di gestire automaticamente la concorrenza senza provocare race conditions.
 I canali possono essere usati per implementare un comportamento simile a quello dei semafori nella programmazione concorrente, e sono lo strumento principale di Go per la sincronizzazione e la comunicazione tra goroutine.
 
-
-
 L'implementazione del bounded concurrency pattern si è basata da una funzione che calcola il \emph{checksum MD5} di tutti i file in una directory specificata \cite{ajmani2014pipelines}, riadattandola secondo le necessità del sistema in sviluppo.
 
 \lstinputlisting[
@@ -66,9 +64,9 @@ L'implementazione del bounded concurrency pattern si è basata da una funzione c
     \label{fig:bounded-concurrency-go}
 \end{figure}
 
-Il funzionamento illustrato in figura \cref{fig:bounded-concurrency-go} si basa su tre canali distinti:
+Il funzionamento illustrato in \cref{fig:bounded-concurrency-go} si basa su tre canali distinti:
 \begin{itemize}
-    \item \emph{Canale di distribuzione degli indirizzi}: eroga uno alla volta ciascun indirizzo dei server da interrogare. Canale utilizzato dalla funzione \texttt{serverListWalk} (\Cref{lst:server-walker})  e sul quale si mettono in ascolto i nodi worker.
+    \item \emph{Canale di distribuzione degli indirizzi}: eroga uno alla volta ciascun indirizzo dei server da interrogare. Canale utilizzato dalla funzione \texttt{serverListWalk} (\Cref{lst:server-walker}) e sul quale si mettono in ascolto i nodi worker.
     \item \emph{Canale di raccolta dei risultati}: eseguito dal thread principale colleziona i risultati calcolati da ciascun thread worker.
     \item Un canale utilizzato per la segnalazione della conclusione del processo.
 \end{itemize}
@@ -84,11 +82,11 @@ Una volta inizializzati i canali viene creato l'insieme di lavoratori, la cui im
 
 Questa implementazione permette un effettivo parallelismo a runtime solamente se il sistema sottostante ha una CPU multicore e se la variabile \texttt{GOMAXPROCS}\footnote{\texttt{GOMAXPROCS} è la variabile che indica il numero massimo di thread che si possono usare per eseguire goroutines in parallelo.} lo permette \cite{michealcarlos2025gomaxproc}.
 
-Dalla versione 1.24 in poi di go la variabile assume di default il numero totale di CPU cores nella macchina.
+Dalla versione 1.24 in poi di Go la variabile assume di default il numero totale di CPU cores nella macchina.
 \section{Frontend}
 Per lo sviluppo del frontend è stato coinvolto un esperto di user experience, con l'obiettivo di mantenere un elevato standard di usabilità e garantire coerenza di stile con il resto dell'applicativo. Questo coinvolgimento ha permesso di affrontare la progettazione non solo dal punto di vista funzionale, ma anche tenendo conto dei principi di design consolidati, evitando così di introdurre incoerenze visive o pattern di interazione poco intuitivi per l'utente finale.
 
-La progettazione è partita dall'analisi del design della vecchia pagina, individuando punti di forza e criticità dell'interfaccia esistente. L'obiettivo della nuova versione era quello di riproporre le stesse funzionalità in maniera più chiara e pulita, semplificando la fruizione delle informazioni senza però stravolgere le abitudini d'uso già acquisite dagli utenti. La figura~\ref{fig:wireframe} illustra il design generale che si intendeva riprodurre, evidenziando la disposizione degli elementi principali e il flusso di interazione previsto.
+La progettazione è partita dall'analisi del design della vecchia pagina, individuando punti di forza e criticità dell'interfaccia esistente. L'obiettivo della nuova versione era quello di riproporre le stesse funzionalità in maniera più chiara e pulita, semplificando la fruizione delle informazioni senza però stravolgere le abitudini d'uso già acquisite dagli utenti. La \cref{fig:wireframe} illustra il design generale che si intendeva riprodurre, evidenziando la disposizione degli elementi principali e il flusso di interazione previsto.
 \begin{figure}
     \centering
     \includegraphics[width=1\linewidth]{figures/ui-wireframe.pdf}
@@ -96,7 +94,7 @@ La progettazione è partita dall'analisi del design della vecchia pagina, indivi
     \label{fig:wireframe}
 \end{figure}
 
-Inizialmente è stato proposto un design semplice, che riproponeva sostanzialmente la struttura della pagina precedente, limitandosi a modificarne lo stile grafico per renderlo più moderno e in linea con gli standard visivi attuali. Questa prima iterazione illustrata in figura \cref{fig:intermediate-design}, pur rappresentando un miglioramento estetico, non introduceva sostanziali cambiamenti nella disposizione dei contenuti né nell'esperienza d'uso complessiva.
+Inizialmente è stato proposto un design semplice, che riproponeva sostanzialmente la struttura della pagina precedente, limitandosi a modificarne lo stile grafico per renderlo più moderno e in linea con gli standard visivi attuali. Questa prima iterazione illustrata in \cref{fig:intermediate-design}, pur rappresentando un miglioramento estetico, non introduceva sostanziali cambiamenti nella disposizione dei contenuti né nell'esperienza d'uso complessiva.
 
 \begin{figure}
     \centering
@@ -106,7 +104,7 @@ Inizialmente è stato proposto un design semplice, che riproponeva sostanzialmen
 \end{figure}
 
 
-Dopo l'intervento dell'esperto UX, il mockup si è evoluto significativamente: da un lato mantenendo coerente lo stile visivo con il resto della piattaforma FlashStart 2026, dall'altro introducendo una struttura più flessibile e modulare, pensata per accogliere eventuali evoluzioni future senza richiedere una riprogettazione radicale dell'interfaccia. Questo processo iterativo, frutto di diversi cicli di revisione e confronto, ha portato alla definizione del design finale mostrato in figura~\ref{fig:final-mockup}.
+Dopo l'intervento dell'esperto UX, il mockup si è evoluto significativamente: da un lato mantenendo coerente lo stile visivo con il resto della piattaforma FlashStart 2026, dall'altro introducendo una struttura più flessibile e modulare, pensata per accogliere eventuali evoluzioni future senza richiedere una riprogettazione radicale dell'interfaccia. Questo processo iterativo, frutto di diversi cicli di revisione e confronto, ha portato alla definizione del design finale mostrato in \cref{fig:final-mockup}.
 
 \begin{figure}
     \centering

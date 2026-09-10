@@ -26,7 +26,7 @@ L'operazione è di tipo \emph{embarrassingly parallel} \cite{mattson2004patterns
 
 Tuttavia, senza alcuna limitazione, il sistema potrebbe consumare una quantità eccessiva di risorse al crescere del numero di server da interrogare, violando il vincolo introdotto nella \cref{sec:limitazioni}.
 Per questo motivo è stato scelto di limitare il numero di unità di esecuzione concorrenti sfruttando il \emph{bounded parallelism pattern} attraverso un meccanismo di semafori e monitor, evitando il degrado della rete e un utilizzo eccessivo delle risorse macchina.
-Sfruttando tale pattern, l'esecuzione del fan-out viene eseguita secondo il paradigma di programmazione parallela \emph{master-worker} come in figura \cref{fig:master-worker}, in cui un'unità coordinatrice (\emph{master}) distribuisce i task alle unità esecutrici (\emph{worker}), garantendo così il rispetto del vincolo di parallelismo imposto.
+Sfruttando tale pattern, l'esecuzione del fan-out viene eseguita secondo il paradigma di programmazione parallela \emph{master-worker} come in \cref{fig:master-worker}, in cui un'unità coordinatrice (\emph{master}) distribuisce i task alle unità esecutrici (\emph{worker}), garantendo così il rispetto del vincolo di parallelismo imposto.
 \begin{figure}
     \centering
     \includegraphics[width=.8\linewidth,trim=0 0 0 2cm]{figures/master-worker.pdf}
@@ -39,12 +39,11 @@ A seguito di una richiesta \ac{HTTP} potrebbe essere necessario eseguire più fu
 
 Per la gestione dei middleware in sequenza è stato adottato il design pattern \emph{chain of responsibility} \cite[pp.~223--232]{gamma1994design}(\Cref{fig:http-middleware}), che permette di far scorrere la richiesta lungo una catena di ``handler''. Ogni handler, dopo aver processato la richiesta, può decidere se passarla al successivo elemento della catena oppure se interrompere l'esecuzione, restituendo direttamente una risposta.
 
-% Un esempio di flusso di informazione si può vedere in (ref a grafico)
 Alcuni esempi di handler sono la gestione del logging strutturato e il disaster recovery. Sia il servizio di downstream sia quello di upstream utilizzano questa struttura, garantendo un comportamento uniforme e riutilizzabile lungo tutta l'architettura.
 \begin{figure}
     \centering
     \includegraphics[width=1\linewidth]{figures/http-middleware.pdf}
-    \caption[Diagramma delle classi del pattern chain of responsibility.]{Specifico nel caso del servizio downstream. Alla creazione dell'gestore della richiesta vengono aggiunti tutti i middleware necessari alla corretta esecuzione della richiesta. Il \texttt{IpWhitelistMiddleware} ha il compito di filtrare le richieste ricevute in base all'indirizzo del mittente.
+    \caption[Diagramma delle classi del pattern chain of responsibility.]{Specifico nel caso del servizio downstream. Alla creazione dell'gestore della richiesta vengono aggiunti tutti i middleware necessari alla corretta esecuzione della richiesta. Il \texttt{IpWhitelistMiddleware} ha il compito di filtrare le richieste ricevute in base all'indirizzo del mittente, come richiesto in analisi.
     Questo middleware può terminare la catena di esecuzione.}
     \label{fig:http-middleware}
 \end{figure}
@@ -53,7 +52,7 @@ Alcuni esempi di handler sono la gestione del logging strutturato e il disaster 
 \section{Caricamento delle variabili d'ambiente}
 \label{sec:variable-load}
 Sia il servizio di upstream che quello di downstream necessitano, in fase di avvio, del caricamento di un insieme di variabili d'ambiente indispensabili per il corretto funzionamento del sistema (ad esempio parametri di connessione, endpoint, credenziali o soglie operative).
-Il design adottato in figura \cref{fig:config-loader} centralizza il caricamento e la validazione della configurazione delle singole componenti dell'applicazione a partire dalle variabile d'ambiente, restituendo un oggetto completamente validato oppure un errore esplicito al primo problema riscontrato.
+Il design adottato in \cref{fig:config-loader} centralizza il caricamento e la validazione della configurazione delle singole componenti dell'applicazione a partire dalle variabile d'ambiente, restituendo un oggetto completamente validato oppure un errore esplicito al primo problema riscontrato.
 \begin{figure}
     \centering
     \includegraphics[width=1\linewidth]{figures/config-loader.pdf}
@@ -66,7 +65,7 @@ Ogni tipo di dato ha una funzione di validazione dedicata che restituisce il val
 \label{sec:app-integration-design}
 Si vuole permettere agli utenti di \emph{FlashStart 2026} di usufruire del servizio di latenza. È dunque necessario aggiungere un nuovo entrypoint all'interno dell'applicazione. Per mantenere una codebase coerente con il resto del sistema, sviluppato dagli altri developer dell'azienda, si è scelto di progettare il nuovo entrypoint seguendo il pattern M.V.C.
 
-L'entrypoint è suddiviso in tre componenti distinti:
+L'entrypoint è suddiviso in tre componenti distinte:
 \begin{itemize}
     \item il \texttt{LatencyController}, elemento intermediario tra la view e il servizio vero e proprio;
     \item il \texttt{LatencyService}, contenente l'effettiva business logic e il controllo dei permessi;
@@ -88,4 +87,4 @@ L'architettura risultante, illustrata in \cref{fig:fs-integration-mvc}, evidenzi
     \caption[Diagramma delle classi del pattern decorator.]{Pattern utilizzato dai vari servizi all'interno della piattaforma FlashStart 2026, permette di eseguire autenticazione, autorizzazione e logging strutturato senza modificare il codice interno del servizio, mantenendo separate le diverse logiche.}
     \label{fig:service-decorator}
 \end{figure}
-Al fine di mantenere separata la logica applicativa dalla gestione di autenticazione e autorizzazione, questi ultimi vengono controllati tramite il pattern \emph{decorator} \cite[pp.~175--184]{gamma1994design} come illustrato in figura \cref{fig:service-decorator}, sfruttando le strutture già presenti nella codebase dell'applicazione.
+Al fine di mantenere separata la logica applicativa dalla gestione di autenticazione e autorizzazione, questi ultimi vengono controllati tramite il pattern \emph{decorator} \cite[pp.~175--184]{gamma1994design} come illustrato in \cref{fig:service-decorator}, sfruttando le strutture già presenti nella codebase dell'applicazione.

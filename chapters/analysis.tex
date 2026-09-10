@@ -6,7 +6,7 @@ In questo capitolo vengono evidenziati i requisiti del progetto, analizzando i l
 \label{sec:obiettivi}
 
 L'obiettivo del presente lavoro di tesi consiste nella modernizzazione architetturale e sul re-engineering ad alte prestazioni dei servizi di misurazione della latenza di rete, il cui sistema originario è costituito da un'architettura monolitica sviluppata in linguaggio PhP e Python.
-Tale intervento si propone di superare i limiti strutturali dell'implementazione esistente, preservando al contempo l'architettura di comunicazione attualmente in uso, articolata nelle tre componenti descritte nel Capitolo~\ref{chap:background}.
+Tale intervento si propone di superare i limiti strutturali dell'implementazione esistente, preservando al contempo l'architettura di comunicazione attualmente in uso, articolata nelle tre componenti descritte nel capitolo~\ref{chap:background}.
 Il progetto prevede inoltre la redazione di una documentazione tecnica dettagliata per ciascuna delle componenti sviluppate, con l'obiettivo di agevolare la manutenzione del sistema e di facilitare eventuali sviluppi futuri.
 
 \subsection{Obiettivi delle componenti di upstream e downstream}
@@ -43,7 +43,7 @@ Per quanto riguarda le componenti di \emph{downstream} e \emph{upstream}, il pro
 \section{Analisi dei Requisiti}
 \label{sec:requirement-analysis}
 
-I due servizi principali devono essere progettati seguendo il pattern di programmazione MVC.Devono esporre delle api ben definite, analizzare le richieste ricevute e eseguire le operazioni sui dati.
+I due servizi principali devono essere progettati seguendo il pattern di programmazione MVC. Devono esporre delle \ac{API} ben definite, analizzare le richieste ricevute e eseguire le operazioni sui dati.
 \subsection{Upstream aggregator}
 \label{subsec:upstream-analysis}
 Il servizio di upstream dovrà essere composto da 3 sezioni distinte.
@@ -100,14 +100,15 @@ Non appena la richiesta viene ricevuta dal servizio, essa deve essere sottoposta
 \end{itemize}
 la richiesta deve essere rifiutata immediatamente, senza procedere ad alcuna operazione successiva, restituendo il codice di stato \texttt{403}. Questo comportamento garantisce che il servizio non impieghi risorse computazionali per richieste malformate.
 
-Una volta superata la fase di validazione, la richiesta deve restituire un semplice valore numerico, che rappresenta il tempo di risposta medio o \ac{RTT} rilevato eseguendo un ping dal server che gestisce la richiesta verso la macchina identificata dall'indirizzo \ac{IP} fornito nel campo \texttt{network}.
+Una volta superata la fase di validazione, la richiesta deve restituire un semplice valore numerico, che rappresenta il tempo di risposta medio o average \ac{RTT} rilevato eseguendo un ping dal server che gestisce la richiesta verso la macchina identificata dall'indirizzo \ac{IP} fornito nel campo \texttt{network}.
 
 Infine, deve essere possibile attivare un middleware aggiuntivo in grado di filtrare le richieste ricevute in base all'indirizzo del mittente.
 Questo serve a permettere l'utilizzo del servizio solamente da indirizzi predefiniti come l'indirizzo dell'upstream aggregator.
 \subsubsection{Esecuzione del ping}
 Una volta che l'indirizzo fornito è stato validato con successo, il servizio deve procedere all'esecuzione del ping verso la macchina specificata. È fondamentale che questo passaggio operativo risulti del tutto indipendente dalla versione dell'indirizzo \ac{IP} ricevuto: la logica di esecuzione deve comportarsi in maniera uniforme, a prescindere dal fatto che si tratti di un indirizzo IPv4 o IPv6.
 
-Data la natura sincrona e potenzialmente bloccante di questa operazione, devono essere introdotte delle deadline stringenti, il cui scopo è evitare che il servizio consumi risorse in maniera eccessiva o rimanga in attesa per periodi di tempo troppo lunghi. Tale deadline non è un valore statico, bensì viene derivata dinamicamente in funzione del numero di pacchetti \ac{ICMP} inviati durante l'operazione di ping, a cui viene sommato un piccolo buffer fisso, introdotto per assorbire eventuali variazioni minime nei tempi di rete.
+Data la natura sincrona e potenzialmente bloccante di questa operazione, devono essere introdotte delle deadline stringenti, il cui scopo è evitare che il servizio consumi risorse in maniera eccessiva o rimanga in attesa per periodi di tempo troppo lunghi.
+Tale deadline non deve essere un valore statico, bensì dovrà essere derivata dinamicamente in funzione del numero di pacchetti \ac{ICMP} inviati durante l'operazione di ping, a cui viene sommato un piccolo buffer fisso, introdotto per assorbire eventuali variazioni minime nei tempi di rete.
 
 \subsubsection{Validazione del risultato.}
 Infine, una volta completata l'esecuzione del ping, il risultato ottenuto deve essere sottoposto a un'ulteriore fase di validazione prima di essere restituito al chiamante:
