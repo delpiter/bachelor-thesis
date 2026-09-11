@@ -6,7 +6,9 @@ In questo capitolo vengono evidenziati i requisiti del progetto, analizzando i l
 \label{sec:obiettivi}
 
 L'obiettivo del presente lavoro di tesi consiste nella modernizzazione architetturale e sul re-engineering ad alte prestazioni dei servizi di misurazione della latenza di rete, il cui sistema originario è costituito da un'architettura monolitica sviluppata in linguaggio PhP e Python.
+
 Tale intervento si propone di superare i limiti strutturali dell'implementazione esistente, preservando al contempo l'architettura di comunicazione attualmente in uso, articolata nelle tre componenti descritte nel capitolo~\ref{chap:background}.
+
 Il progetto prevede inoltre la redazione di una documentazione tecnica dettagliata per ciascuna delle componenti sviluppate, con l'obiettivo di agevolare la manutenzione del sistema e di facilitare eventuali sviluppi futuri.
 
 \subsection{Obiettivi delle componenti di upstream e downstream}
@@ -79,6 +81,7 @@ Il fallimento della richiesta o il superamento di una deadline pre-impostata com
 In questa sezione il sistema deve validare ciascun indirizzo \ac{IP} ottenuto in precedenza.
 Per ogni host valido verrà interrogato il server downstream corrispondente per ottenere il relativo valore della latenza rispetto all'indirizzo fornito dall'utente.
 Ogni richiesta deve essere trattata in maniera indipendente dalle altre: il fallimento di una richiesta non deve compromettere l'intera aggregazione.
+
 Una volta ottenuti, i risultati devono essere normalizzati per aderire al modello di risposta analizzato in precedenza.
 Se una richiesta fallisce, impiega troppo tempo o ritorna un codice \ac{HTTP} diverso da \texttt{2xx}, deve essere assegnato il valore \texttt{-1} alla risposta di quel server.
 

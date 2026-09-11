@@ -1,16 +1,19 @@
 \chapter{Analisi dei Risultati}
 \label{chap:results}
 Durante l'intero sviluppo del servizio è stata applicata la metodologia del \ac{TDD}, in conformità a un requisito stabilito dall'azienda durante il percorso di tirocinio.
+
 Per ciascuna componente del servizio sono stati creati diversi casi di test basandosi sulle specifiche dettate in fase di analisi.
 Questo capitolo descrive la metodologia con cui sono stati creati i test per i vari componenti del servizio.
 
 \section{Testing in Go}
 Per le componenti di upstream e downstream è stato privilegiato l'utilizzo degli strumenti nativi del linguaggio Go per il testing automatico (package testing della standard library), in linea con le convenzioni del linguaggio e senza la necessità di introdurre dipendenze esterne aggiuntive.
 
-La suite di test è stata progettata per coprire le principali cause di errore individuate in fase di analisi, con l'obiettivo di intercettare tempestivamente malfunzionamenti che potrebbero compromettere la stabilità dei servizi in produzione. Nello specifico, sono state individuate tre aree critiche su cui concentrare lo sforzo di testing:
+La suite di test è stata progettata per coprire le principali cause di errore individuate in fase di analisi, con l'obiettivo di intercettare tempestivamente malfunzionamenti che potrebbero compromettere la stabilità dei servizi in produzione. Nello specifico, sono state individuate tre aree critiche su cui concentrare lo sforzo di testing.
 
 \subsection{Caricamento della configurazione}
-Come descritto in \cref{sec:variable-load} sia il servizio di upstream che quello di downstream necessitano del caricamento di un insieme di variabili d'ambiente indispensabili per il corretto funzionamento del sistema. Sono stati quindi implementati test volti a verificare che:
+Come descritto in \cref{sec:variable-load} sia il servizio di upstream che quello di downstream necessitano del caricamento di un insieme di variabili d'ambiente indispensabili per il corretto funzionamento del sistema.
+
+Sono stati quindi implementati test volti a verificare che:
 \begin{itemize}
     \item in presenza di tutte le variabili richieste con valori validi, il servizio si avvii correttamente e le configurazioni vengano caricate secondo quanto atteso;
     \item in caso di assenza di una o più variabili obbligatorie, l'esecuzione del servizio venga interrotta in modo controllato, restituendo un messaggio di errore esplicativo;
@@ -27,7 +30,9 @@ Sono stati inoltre realizzati test dedicati alle funzioni core di ciascun serviz
 \end{itemize}
 
 \subsection{Route HTTP}
-Per la validazione delle route \ac{HTTP} esposte dai due servizi è stato utilizzato il package \texttt{net/http/httptest}, appartenente alla standard library di Go, che consente di simulare richieste \ac{HTTP} senza la necessità di avviare un server reale e in ascolto su una porta di rete. Attraverso questo strumento sono state simulate le chiamate \texttt{GET} verso gli endpoint esposti da upstream e downstream, permettendo di verificare:
+Per la validazione delle route \ac{HTTP} esposte dai due servizi è stato utilizzato il package \texttt{net/http/httptest}, appartenente alla standard library di Go, che consente di simulare richieste \ac{HTTP} senza la necessità di avviare un server reale e in ascolto su una porta di rete.
+
+Attraverso questo strumento sono state simulate le chiamate \texttt{GET} verso gli endpoint esposti da upstream e downstream, permettendo di verificare:
 \begin{itemize}
     \item la correttezza dei codici di stato \ac{HTTP} restituiti nelle diverse casistiche (successo, errore, risorsa non trovata, ecc.);
     \item la corretta struttura e il contenuto del payload di risposta;
@@ -65,6 +70,7 @@ L'adozione di queste funzioni ha permesso di:
 Dopo una analisi della semantica delle informazioni fornite da questo servizio, insieme al team di sviluppo si è giunti alla conclusione che nessun microservizio attualmente presente all'interno della piattaforma FlashStart 2026 sarebbe stato adatto al contenimento di questa nuova \ac{API}, è stata quindi necessaria la creazione di un nuovo microservizio: \emph{infrastructure}.
 
 Il nuovo microservizio servirà per tutte quelle nuove feature che implementano un qualsiasi tipo di strumento di supporto all'utilizzo dell'applicazione.
+
 Per la creazione del nuovo microservizio è stato necessario configurare diversi aspetti:
 \begin{itemize}
     \item \emph{Ambiente di testing}: un ambiente di testing automatico per l'esecuzione dei test del nuovo microservizio.
@@ -80,6 +86,7 @@ Per il dispiegamento dei servizi di downstream e upstream all'interno dei server
     label={lst:multistage-dockerfile},
     caption={[Multistage Dockerfile] Dockerfile a stage multipli utilizzato per il dispiegamento sia del servizio di downstream che dell'upstream aggregator. In particolare questo dockerfile è utilizzato dal downstream, si può notare dall'aggiunta delle ``network capabilities'', necessarie per l'esecuzione del ping.}
     ]{listings/Dockerfile}
+
 Per evitare di caricare sui server codice binario inutilizzato come il compilatore del linguaggio, è stato creato il dockerfile multistage riportato nel \cref{lst:multistage-dockerfile}.
 
 Il file è composto da due stage:
@@ -90,4 +97,5 @@ Il file è composto da due stage:
 
 A differenza del vecciho downstream, dispiegato su ciascun \ac{DNS} resolver (multipli container in una sola macchina), il nuovo servizio verrà direttamente inserito all'interno sistema bare metal come servizio indipendente.
 
-Questa modifica ha come conseguenza due miglioramenti: minore consumo di memoria in una singola macchina dato da inutili copie del servizio e maggiore efficienza nel processo di aggregazione, in quanto il numero di server da interrogare è notevolmente ridotto, viene inoltre rimossa la necessità di filtrare indirizzi duplicati in quanto ogni macchina viene interrogata una volta sola.
+Questa modifica ha come conseguenza due miglioramenti: minore consumo di memoria in una singola macchina dato da inutili copie del servizio e maggiore efficienza nel processo di aggregazione, in quanto il numero di server da interrogare è notevolmente ridotto.
+Viene inoltre rimossa la necessità della funzione di filtraggio degli indirizzi duplicati, descritta in \cref{section:route-php}, in quanto ogni macchina viene interrogata una volta sola.

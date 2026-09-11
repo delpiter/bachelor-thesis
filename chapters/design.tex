@@ -2,11 +2,13 @@
 \label{chap:design}
 In questo capitolo vengono illustrate e motivate le principali decisioni architetturali prese durante lo sviluppo del servizio.
 Nello specifico, vengono descritte le scelte relative ai componenti che lo costituiscono, con particolare attenzione ai requisiti funzionali e non funzionali individuati nella fase di analisi.
+
 Per alcune delle decisioni prese vengono inoltre discusse le alternative valutate e le motivazioni che hanno portato alla soluzione adottata, così da fornire una visione chiara e completa del percorso progettuale seguito.
 
 \section{Gestione trasparente delle versioni IP}
 \label{sec:ipversion-handler}
 Il servizio di downstream deve essere in grado di gestire in maniera trasparente le due versioni del protocollo \ac{IP} (IPv4 e IPv6), evitando che la logica applicativa debba occuparsi esplicitamente delle differenze tra i due protocolli.
+
 Le operazioni specifiche di ciascuna versione vengono quindi delegate a una classe dedicata che, sfruttando il pattern \emph{strategy} \cite[pp.~315--323]{gamma1994design} (\Cref{fig:icmp-stretegy}), incapsula le diverse implementazioni necessarie all'invio del messaggio \ac{ICMP} in base alla versione del protocollo \ac{IP} utilizzata.
 
 Rispetto a una soluzione basata su costrutti condizionali (\texttt{if}/\texttt{else} o \texttt{switch}) sparsi nel codice, questa scelta consente di aggiungere in futuro il supporto a nuove versioni del protocollo, o nuove modalità di invio, senza dover modificare il codice client che utilizza tali classi, rispettando così il principio open/closed.
@@ -26,6 +28,7 @@ L'operazione è di tipo \emph{embarrassingly parallel} \cite{mattson2004patterns
 
 Tuttavia, senza alcuna limitazione, il sistema potrebbe consumare una quantità eccessiva di risorse al crescere del numero di server da interrogare, violando il vincolo introdotto nella \cref{sec:limitazioni}.
 Per questo motivo è stato scelto di limitare il numero di unità di esecuzione concorrenti sfruttando il \emph{bounded parallelism pattern} attraverso un meccanismo di semafori e monitor, evitando il degrado della rete e un utilizzo eccessivo delle risorse macchina.
+
 Sfruttando tale pattern, l'esecuzione del fan-out viene eseguita secondo il paradigma di programmazione parallela \emph{master-worker} come in \cref{fig:master-worker}, in cui un'unità coordinatrice (\emph{master}) distribuisce i task alle unità esecutrici (\emph{worker}), garantendo così il rispetto del vincolo di parallelismo imposto.
 \begin{figure}
     \centering
@@ -52,6 +55,7 @@ Alcuni esempi di handler sono la gestione del logging strutturato e il disaster 
 \section{Caricamento delle variabili d'ambiente}
 \label{sec:variable-load}
 Sia il servizio di upstream che quello di downstream necessitano, in fase di avvio, del caricamento di un insieme di variabili d'ambiente indispensabili per il corretto funzionamento del sistema (ad esempio parametri di connessione, endpoint, credenziali o soglie operative).
+
 Il design adottato in \cref{fig:config-loader} centralizza il caricamento e la validazione della configurazione delle singole componenti dell'applicazione a partire dalle variabile d'ambiente, restituendo un oggetto completamente validato oppure un errore esplicito al primo problema riscontrato.
 \begin{figure}
     \centering
@@ -59,6 +63,7 @@ Il design adottato in \cref{fig:config-loader} centralizza il caricamento e la v
     \caption[Caricatore delle configurazioni.]{Per il caricamento della configurazione vengono esposte una serie di classi, una per ciascun tipo di controllo da eseguire sulle varie variabili d'ambiente.}
     \label{fig:config-loader}
 \end{figure}
+
 Ogni tipo di dato ha una funzione di validazione dedicata che restituisce il valore o un errore. Questo separa la logica di validazione dalla logica di orchestrazione del caricamento, rendendo ogni singolo controllo testabile in isolamento.
 
 \section{Integrazione con FlashStart 2026}

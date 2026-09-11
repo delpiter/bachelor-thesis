@@ -7,6 +7,7 @@ La comprensione approfondita di tale architettura, delle sue componenti e delle 
 Di seguito viene descritta nel dettaglio l'architettura a tre componenti: Upstream Orchestrator, Downstream e route PhP, che costituisce il punto di partenza dell'analisi condotta in questo lavoro.
 
 Il servizio di misurazione della latenza (di seguito \emph{latency service}) adotta un'architettura distribuita a tre componenti disaccoppiati, ciascuno responsabile di una fase distinta del processo di raccolta, aggregazione ed esposizione dei dati.
+
 Le componenti comunicano tra loro in sequenza tramite chiamate \ac{HTTP}, secondo un modello \emph{orchestrator--worker} ricorrente nei sistemi progettati per il monitoraggio distribuito di infrastrutture di rete su larga scala.
 La \cref{fig:legacy-architecture} illustra schematicamente l'architettura delle tre componenti; di seguito ciascuna di esse viene descritta in dettaglio.
 
@@ -34,7 +35,9 @@ Essendo un componente unico e centralizzato, l'Upstream Orchestrator costituisce
 \subsection{Struttura}
 Internamente, l'Upstream Orchestrator non è implementato come un blocco monolitico, bensì risulta suddiviso in due sotto-componenti distinte, realizzate con tecnologie differenti e comunicanti tra loro tramite un meccanismo di invocazione locale.
 
-\paragraph{Controller PhP.} Il primo elemento è un controller scritto in PhP, responsabile della gestione delle richieste in ingresso provenienti dai client (nello specifico, dalla route PhP di FlashStart Cloud descritta nella Sezione~\ref{section:route-php}). Il controller si occupa della validazione dei parametri ricevuti, dell'invocazione dello script Python descritto di seguito e della formattazione della risposta finale da restituire al chiamante.
+\paragraph{Controller PhP.} Il primo elemento è un controller scritto in PhP, responsabile della gestione delle richieste in ingresso provenienti dai client (nello specifico, dalla route PhP di FlashStart Cloud descritta nella Sezione~\ref{section:route-php}).
+
+Il controller si occupa della validazione dei parametri ricevuti, dell'invocazione dello script Python descritto di seguito e della formattazione della risposta finale da restituire al chiamante.
 In questo senso, il controller PhP svolge un ruolo di \emph{adapter}, disaccoppiando l'interfaccia esposta verso l'esterno dalla logica di orchestrazione vera e propria.
 
 \paragraph{Script Python.} Il secondo elemento è uno script Python esterno, invocato dal controller PhP come processo separato, a cui è demandata la logica core dell'orchestrazione. In particolare, lo script è responsabile di eseguire le funzioni descritte in precedenza.
@@ -58,7 +61,6 @@ Il latency engine non è altro che uno script PhP esegue comandi shell di sistem
 Il parsing dell'output si basa su indici di riga fissi.
 
 \lstinputlisting[
-    float,
     language=c++,
     label={lst:ping-output},
     caption={[Output del comando ping.] Esempio dell'output del comando ping atteso dal parser.}
@@ -84,7 +86,7 @@ Questo script PhP riceve i dati dall'upstream orchestrator e inserisce informazi
 Lo script contiene alcune inefficienze che impattano sulle prestazioni generali del servizio.
 \begin{itemize}
     \item \emph{Filtraggio delle risposte}: lo script include una funzione per filtrare le risposte duplicate, dovute alla presenza di più resolver \ac{DNS} sullo stesso server fisico.
-    \item \emph{Operazioni onerose}: per ciascun risultato vengono eseguite diverse operazioni onerose, riportate nel \cref{lst:route-inefficiencies}, molte delle quali si rivelano inutili a causa del successivo filtraggio dei duplicati.
+    \item \emph{Operazioni onerose}: per ciascun risultato vengono eseguite diverse operazioni pesanti, riportate nel \cref{lst:route-inefficiencies}, molte delle quali si rivelano inutili a causa del successivo filtraggio dei duplicati.
     \item \emph{Ordinamento ridondante}: il risultato ottenuto viene nuovamente ordinato, nonostante fosse stato già eseguito dalla componente di upstream.
 \end{itemize}
 
