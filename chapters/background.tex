@@ -40,7 +40,7 @@ Internamente, l'Upstream Orchestrator non è implementato come un blocco monolit
 Il controller si occupa della validazione dei parametri ricevuti, dell'invocazione dello script Python descritto di seguito e della formattazione della risposta finale da restituire al chiamante.
 In questo senso, il controller PhP svolge un ruolo di \emph{adapter}, disaccoppiando l'interfaccia esposta verso l'esterno dalla logica di orchestrazione vera e propria.
 
-\paragraph{Script Python.} Il secondo elemento è uno script Python esterno, invocato dal controller PhP come processo separato, a cui è demandata la logica core dell'orchestrazione. In particolare, lo script è responsabile di eseguire le funzioni descritte in precedenza.
+\paragraph{Script Python.} Il secondo elemento è uno script Python esterno, invocato dal controller PhP come processo separato, a cui è delegata la logica core dell'orchestrazione. In particolare, lo script è responsabile di eseguire le funzioni descritte in precedenza.
 
 Al termine dell'elaborazione, lo script Python restituisce l'output al controller PhP, che ne cura la trasformazione nel formato di risposta atteso dal client.
 

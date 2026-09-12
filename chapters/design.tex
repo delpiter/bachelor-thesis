@@ -23,7 +23,9 @@ Rispetto a una soluzione basata su costrutti condizionali (\texttt{if}/\texttt{e
 \section{Fan-out parallelo}
 \label{sec:parallel-fanout}
 L'upstream aggregator ha il compito di eseguire il fan-out\sidenote{Il fan-out si riferisce all'atto di distribuire le informazioni da una singola fonte verso più destinazioni.} verso gli host selezionati.
-Poiché il numero di server da interrogare potrebbe aumentare notevolmente nel tempo, non è possibile eseguire le chiamate in sequenza: con un numero elevato di interrogazioni, l'esecuzione verrebbe inevitabilmente interrotta dal timeout imposto. È quindi necessario eseguire le chiamate in parallelo.
+Poiché il numero di server da interrogare potrebbe aumentare notevolmente nel tempo, non è possibile eseguire le chiamate in sequenza: con un numero elevato di interrogazioni, l'esecuzione verrebbe inevitabilmente interrotta dal timeout imposto.
+
+È quindi necessario eseguire le chiamate in parallelo.
 L'operazione è di tipo \emph{embarrassingly parallel} \cite{mattson2004patterns}, poiché ogni singola esecuzione è indipendente dalle altre e non richiede alcuna forma di sincronizzazione tra i vari task.
 
 Tuttavia, senza alcuna limitazione, il sistema potrebbe consumare una quantità eccessiva di risorse al crescere del numero di server da interrogare, violando il vincolo introdotto nella \cref{sec:limitazioni}.
