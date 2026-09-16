@@ -26,7 +26,7 @@ Sono stati infatti utilizzati \texttt{typescript} per l'interazione tra l'applic
 
 \section{Wrapper ICMP}
 L'esecuzione del ping sul server è l'operazione più importante del sistema.
-La versione legacy del software eseguiva semplicemente il comando \texttt{ping -c MAX\_PING network}\sidenote{\texttt{MAX\_PING} è una variabile che indica quanti pacchetti \ac{ICMP} inviare per l'esecuzione del ping} con una conseguente normalizzazione del risultato.
+La versione legacy del software eseguiva semplicemente il comando \texttt{ping -c MAX\_PING network}\footnote{\texttt{MAX\_PING} è una variabile che indica quanti pacchetti \ac{ICMP} inviare per l'esecuzione del ping} con una conseguente normalizzazione del risultato.
 
 Come analizzato nel in precedenza (vedi \cref{section:downstream}) il parser si basa sulla manipolazione di una stringa con indici di riga fissi; Questo rende il sistema molto fragile ad errori, una piccola variazione nel formato del risultato del comando potrebbe causare il fallimento della richiesta.
 
