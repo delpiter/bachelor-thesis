@@ -1,6 +1,7 @@
 # Benchmarking Latency in a Global Anycast Network
 
-> Bachelor's thesis in Computer Science and Engineering, University of Bologna, Cesena Campus, developed in collaboration with [FlashStart](https://flashstart.com/). Supervisor: Prof. Mirko Viroli.
+> Bachelor's thesis in Computer Science and Engineering, University of Bologna, Cesena Campus, developed in collaboration with [FlashStart](https://flashstart.com/).
+Supervisor: Prof. Mirko Viroli.
 
 ## Abstract
 
